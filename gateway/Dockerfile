@@ -1,27 +1,30 @@
-FROM python:3.12-slim AS base
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install uv
-RUN pip install --no-cache-dir uv
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
-# Copy workspace root (needed for uv workspace resolution)
 COPY pyproject.toml uv.lock ./
 COPY shared/ ./shared/
 COPY gateway/ ./gateway/
 
-# Install gateway + shared in the workspace context
-RUN uv sync --package presenton-gateway --no-dev
+RUN uv sync --frozen --package presenton-gateway --no-dev
 
-FROM base AS runtime
+# ── Runtime ───────────────────────────────────────────────────────────────────
 
-WORKDIR /app/gateway
+FROM python:3.12-slim-bookworm AS runtime
 
-ENV PYTHONUNBUFFERED=1 \
+WORKDIR /app
+
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/shared /app/shared
+COPY --from=builder /app/gateway /app/gateway
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Expose FastAPI gateway port
 EXPOSE 8000
 
-CMD ["uv", "run", "--package", "presenton-gateway", \
-     "uvicorn", "api_gateway.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "api_gateway.app:app", "--host", "0.0.0.0", "--port", "8000"]

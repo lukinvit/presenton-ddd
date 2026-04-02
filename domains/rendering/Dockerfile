@@ -18,6 +18,7 @@ FROM python:3.11-slim-bookworm AS runtime
 WORKDIR /app
 
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/shared /app/shared
 COPY --from=builder /app/domains/rendering /app/domains/rendering
 
 ENV PATH="/app/.venv/bin:$PATH" \
@@ -26,4 +27,4 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 EXPOSE 8040 9040
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8040"]
+CMD ["uvicorn", "domains.rendering.api.main:app", "--host", "0.0.0.0", "--port", "8040"]
