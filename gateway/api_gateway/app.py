@@ -53,6 +53,9 @@ def create_app(
     # Routers
     app.include_router(health_router)
 
+    from api_gateway.proxy import router as proxy_router
+    app.include_router(proxy_router)
+
     return app
 
 
