@@ -15,7 +15,7 @@ class Settings:
     encryption_key: str = ""
     allowed_origins: str = "http://localhost:3000"
     jwt_secret: str = ""
-    jwt_algorithm: str = "RS256"
+    jwt_algorithm: str = "HS256"
     app_data_directory: str = "./app_data"
 
     @classmethod
@@ -28,7 +28,7 @@ class Settings:
             encryption_key=os.getenv("PRESENTON_ENCRYPTION_KEY", ""),
             allowed_origins=os.getenv("PRESENTON_ALLOWED_ORIGINS", "http://localhost:3000"),
             jwt_secret=os.getenv("PRESENTON_JWT_SECRET", ""),
-            jwt_algorithm=os.getenv("PRESENTON_JWT_ALGORITHM", "RS256"),
+            jwt_algorithm=os.getenv("PRESENTON_JWT_ALGORITHM", "HS256"),
             app_data_directory=os.getenv("PRESENTON_APP_DATA_DIR", "./app_data"),
         )
 
