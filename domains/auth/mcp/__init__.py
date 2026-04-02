@@ -1,0 +1,1 @@
+"""Auth MCP server."""
