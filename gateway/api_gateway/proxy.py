@@ -25,7 +25,7 @@ UPSTREAMS: dict[str, str] = {
 
 # Identity domain registers routes at /api/v1/* (register, login)
 # so we also need a direct proxy for those top-level auth routes
-AUTH_ROUTES = {"/api/v1/register", "/api/v1/login", "/api/v1/refresh"}
+AUTH_ROUTES = {"/api/v1/register", "/api/v1/login", "/api/v1/refresh", "/api/v1/auth/token"}
 
 
 @router.api_route(
@@ -52,7 +52,7 @@ async def proxy(request: Request, path: str) -> Response:
                 status_code=404,
                 media_type="application/json",
             )
-        target_url = f"{upstream}/api/v1/{remainder}" if remainder else f"{upstream}/api/v1"
+        target_url = f"{upstream}/api/v1/{prefix}/{remainder}".rstrip("/") if remainder else f"{upstream}/api/v1/{prefix}"
 
     # Forward the request
     body = await request.body()

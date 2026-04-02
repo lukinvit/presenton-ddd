@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '') + '/api/v1';
 
 class APIError extends Error {
   constructor(
@@ -44,27 +44,23 @@ async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
 
 // Auth
 export const authAPI = {
-  login: (username: string, password: string) =>
-    fetchAPI<{ access_token: string; token_type: string }>('/auth/token', {
+  login: (email: string, password: string) =>
+    fetchAPI<{ access_token: string; refresh_token: string }>('/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     }),
 
   register: (data: {
     email: string;
-    username: string;
     password: string;
-    full_name?: string;
   }) =>
-    fetchAPI<{ id: string; email: string; username: string }>(
-      '/identity/users',
+    fetchAPI<{ access_token: string; refresh_token: string }>(
+      '/register',
       {
         method: 'POST',
         body: JSON.stringify(data),
       },
     ),
-
-  me: () => fetchAPI<{ id: string; email: string; username: string }>('/identity/users/me'),
 };
 
 // Presentations

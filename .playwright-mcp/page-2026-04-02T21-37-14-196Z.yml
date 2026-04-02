@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]: P
+      - heading "Welcome back" [level=1] [ref=e7]
+      - paragraph [ref=e8]: Sign in to your Presenton account
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]: Username
+          - textbox "Username" [ref=e13]:
+            - /placeholder: your_username
+            - text: admin@presenton.ai
+        - generic [ref=e14]:
+          - generic [ref=e15]: Password
+          - textbox "Password" [ref=e16]:
+            - /placeholder: ••••••••
+            - text: admin123
+        - paragraph [ref=e22]: "{\"detail\":\"Not Found\"}"
+        - button "Sign In" [ref=e17] [cursor=pointer]
+      - paragraph [ref=e18]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e19] [cursor=pointer]:
+          - /url: /register
+  - alert [ref=e20]

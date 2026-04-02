@@ -1,0 +1,44 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - button "Dashboard" [ref=e6] [cursor=pointer]
+        - img [ref=e7]
+        - generic [ref=e9]: New Presentation
+      - generic [ref=e10]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: "1"
+          - text: Topic
+        - generic [ref=e16]:
+          - generic [ref=e17]: "2"
+          - text: Style
+        - generic [ref=e20]:
+          - generic [ref=e21]: "3"
+          - text: Agents
+        - generic [ref=e24]:
+          - generic [ref=e25]: "4"
+          - text: Progress
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - heading "What's your presentation about?" [level=2] [ref=e29]
+        - paragraph [ref=e30]: Describe your topic and we'll generate a complete presentation for you.
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]: Topic / Prompt
+          - textbox "Topic / Prompt" [ref=e34]:
+            - /placeholder: "e.g. The future of renewable energy: solar, wind, and battery technology trends for 2025-2030"
+        - generic [ref=e35]:
+          - generic [ref=e36]: Title (optional)
+          - textbox "Title (optional)" [ref=e37]:
+            - /placeholder: Will be auto-generated if empty
+        - generic [ref=e38]:
+          - generic [ref=e39]: Description (optional)
+          - textbox "Description (optional)" [ref=e40]:
+            - /placeholder: Additional context for the agents
+        - generic [ref=e42]:
+          - generic [ref=e43]: Number of Slides
+          - spinbutton "Number of Slides" [ref=e44]: "10"
+      - 'button "Next: Style" [disabled] [ref=e46]':
+        - text: "Next: Style"
+        - img [ref=e47]
+  - alert [ref=e49]

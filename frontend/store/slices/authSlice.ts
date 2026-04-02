@@ -13,14 +13,13 @@ const initialState: AuthState = {
 export const login = createAsyncThunk(
   'auth/login',
   async (
-    { username, password }: { username: string; password: string },
+    { email, password }: { email: string; password: string },
     { rejectWithValue },
   ) => {
     try {
-      const tokenData = await authAPI.login(username, password);
+      const tokenData = await authAPI.login(email, password);
       localStorage.setItem('access_token', tokenData.access_token);
-      const user = await authAPI.me();
-      return { token: tokenData.access_token, user };
+      return { token: tokenData.access_token, user: { id: '', email, roles: [] } as User };
     } catch (err) {
       return rejectWithValue(
         err instanceof Error ? err.message : 'Login failed',
@@ -32,35 +31,16 @@ export const login = createAsyncThunk(
 export const register = createAsyncThunk(
   'auth/register',
   async (
-    data: {
-      email: string;
-      username: string;
-      password: string;
-      full_name?: string;
-    },
+    data: { email: string; password: string },
     { rejectWithValue, dispatch },
   ) => {
     try {
-      await authAPI.register(data);
-      return await dispatch(
-        login({ username: data.username, password: data.password }),
-      ).unwrap();
+      const tokenData = await authAPI.register(data);
+      localStorage.setItem('access_token', tokenData.access_token);
+      return { token: tokenData.access_token, user: { id: '', email: data.email, roles: [] } as User };
     } catch (err) {
       return rejectWithValue(
         err instanceof Error ? err.message : 'Registration failed',
-      );
-    }
-  },
-);
-
-export const fetchCurrentUser = createAsyncThunk(
-  'auth/fetchCurrentUser',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await authAPI.me();
-    } catch (err) {
-      return rejectWithValue(
-        err instanceof Error ? err.message : 'Failed to fetch user',
       );
     }
   },
@@ -86,6 +66,15 @@ const authSlice = createSlice({
       state.token = action.payload;
       state.isAuthenticated = true;
     },
+    restoreSession(state) {
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          state.token = token;
+          state.isAuthenticated = true;
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -96,7 +85,7 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.token = action.payload.token;
-        state.user = action.payload.user as User;
+        state.user = action.payload.user;
         state.isAuthenticated = true;
       })
       .addCase(login.rejected, (state, action) => {
@@ -107,24 +96,18 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
+      .addCase(register.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
-      })
-      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-        state.user = action.payload as User;
-        state.isAuthenticated = true;
-      })
-      .addCase(fetchCurrentUser.rejected, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('access_token');
-        }
       });
   },
 });
 
-export const { logout, clearError, setToken } = authSlice.actions;
+export const { logout, clearError, setToken, restoreSession } = authSlice.actions;
 export default authSlice.reducer;

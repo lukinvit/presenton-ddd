@@ -14,14 +14,14 @@ export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const result = await dispatch(login({ username, password }));
+    const result = await dispatch(login({ email, password }));
     if (login.fulfilled.match(result)) {
-      router.push('/dashboard');
+      router.push('/presentations');
     }
   };
 
@@ -41,13 +41,13 @@ export default function LoginPage() {
         <div className="rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Username"
-              type="text"
-              autoComplete="username"
+              label="Email"
+              type="email"
+              autoComplete="email"
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="your_username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
             />
             <Input
               label="Password"
@@ -61,7 +61,13 @@ export default function LoginPage() {
 
             {error && (
               <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">
+                  {error === '{"detail":"Invalid credentials"}'
+                    ? 'Invalid email or password'
+                    : error.includes('detail')
+                      ? 'Login failed. Please try again.'
+                      : error}
+                </p>
               </div>
             )}
 
