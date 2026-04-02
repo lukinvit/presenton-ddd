@@ -1,0 +1,1 @@
+"""WebAccess domain layer."""

@@ -1,0 +1,4 @@
+EVENT_WEB_SEARCHED = "WebSearched"
+EVENT_PAGE_FETCHED = "PageFetched"
+EVENT_SCREENSHOT_TAKEN = "ScreenshotTaken"
+EVENT_DATA_EXTRACTED = "DataExtracted"
