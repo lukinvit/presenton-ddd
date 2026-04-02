@@ -1,0 +1,3 @@
+EVENT_PROVIDER_CONNECTED = "ProviderConnected"
+EVENT_TOKEN_REFRESHED = "TokenRefreshed"
+EVENT_PROVIDER_DISCONNECTED = "ProviderDisconnected"
