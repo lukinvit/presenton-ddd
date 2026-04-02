@@ -34,8 +34,8 @@ class RegisterUserCommand:
                 payload={"user_id": str(user.id), "email": user.email.value},
             )
         )
-        access = await self.token_service.create_access_token(user_id=user.id, roles=[])
-        refresh = await self.token_service.create_refresh_token(user_id=user.id)
+        access = self.token_service.create_access_token(user_id=user.id, roles=[])
+        refresh = self.token_service.create_refresh_token(user_id=user.id)
         return TokenPairDTO(access_token=access, refresh_token=refresh)
 
 
@@ -52,8 +52,8 @@ class LoginUserCommand:
         if not user.password.verify(password):
             raise ValueError("Invalid credentials")
         role_names = [r.name for r in user.roles]
-        access = await self.token_service.create_access_token(user_id=user.id, roles=role_names)
-        refresh = await self.token_service.create_refresh_token(user_id=user.id)
+        access = self.token_service.create_access_token(user_id=user.id, roles=role_names)
+        refresh = self.token_service.create_refresh_token(user_id=user.id)
         await self.event_bus.publish(
             DomainEvent(
                 aggregate_id=user.id,
