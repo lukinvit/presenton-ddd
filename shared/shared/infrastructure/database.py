@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
 
 @dataclass
 class DatabaseConfig:
@@ -11,10 +14,11 @@ class DatabaseConfig:
     pool_recycle: int = 3600
     schema: str | None = None
 
+
 def create_engine_from_config(config: DatabaseConfig) -> AsyncEngine:
     is_sqlite = config.url.startswith("sqlite")
-    connect_args: dict = {}
-    kwargs: dict = {}
+    connect_args: dict[str, object] = {}
+    kwargs: dict[str, object] = {}
     if is_sqlite:
         connect_args["check_same_thread"] = False
     else:
@@ -23,9 +27,11 @@ def create_engine_from_config(config: DatabaseConfig) -> AsyncEngine:
         kwargs["pool_recycle"] = config.pool_recycle
     engine = create_async_engine(config.url, connect_args=connect_args, **kwargs)
     if config.schema and not is_sqlite:
+
         @event.listens_for(engine.sync_engine, "connect")
-        def set_search_path(dbapi_conn, connection_record):
-            cursor = dbapi_conn.cursor()
+        def set_search_path(dbapi_conn: object, connection_record: object) -> None:
+            cursor = dbapi_conn.cursor()  # type: ignore[attr-defined]
             cursor.execute(f"SET search_path TO {config.schema}, public")
             cursor.close()
+
     return engine

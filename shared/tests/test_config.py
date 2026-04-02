@@ -1,6 +1,7 @@
-import os
 import pytest
+
 from shared.infrastructure.config import Settings, get_settings, reset_settings
+
 
 class TestSettings:
     def setup_method(self) -> None:

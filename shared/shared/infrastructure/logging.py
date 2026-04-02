@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import structlog
+
 
 def setup_logging(json_output: bool = True) -> None:
     processors: list[structlog.types.Processor] = [
@@ -21,5 +23,6 @@ def setup_logging(json_output: bool = True) -> None:
         cache_logger_on_first_use=False,
     )
 
+
 def get_logger(domain: str) -> structlog.stdlib.BoundLogger:
-    return structlog.get_logger(domain=domain)
+    return structlog.get_logger(domain=domain)  # type: ignore[no-any-return]

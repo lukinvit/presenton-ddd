@@ -1,9 +1,13 @@
 from __future__ import annotations
+
+import contextlib
 import json
 import uuid
 from collections import defaultdict
 from datetime import datetime
+
 import redis.asyncio as aioredis
+
 from shared.domain.events import DomainEvent, EventHandler
 
 
@@ -17,14 +21,14 @@ class RedisEventBus:
         self._handlers: dict[str, list[EventHandler]] = defaultdict(list)
 
     async def connect(self) -> None:
-        self._redis = aioredis.from_url(self._redis_url, decode_responses=True)
+        self._redis = aioredis.from_url(self._redis_url, decode_responses=True)  # type: ignore[no-untyped-call]
 
     async def publish(self, event: DomainEvent) -> None:
         if self._redis is None:
             await self.connect()
         assert self._redis is not None
         stream_name = f"events:{event.event_type}"
-        await self._redis.xadd(stream_name, self._serialize_event(event))
+        await self._redis.xadd(stream_name, self._serialize_event(event))  # type: ignore[arg-type]
 
     async def subscribe(self, event_type: str, handler: EventHandler) -> None:
         self._handlers[event_type].append(handler)
@@ -54,16 +58,14 @@ class RedisEventBus:
         streams: dict[str, str] = {}
         for event_type in self._handlers:
             stream = f"events:{event_type}"
-            try:
+            with contextlib.suppress(aioredis.ResponseError):
                 await self._redis.xgroup_create(stream, self._consumer_group, id="0", mkstream=True)
-            except aioredis.ResponseError:
-                pass
             streams[stream] = ">"
         while True:
             results = await self._redis.xreadgroup(
                 groupname=self._consumer_group,
                 consumername=consumer_name,
-                streams=streams,
+                streams=streams,  # type: ignore[arg-type]
                 count=10,
                 block=1000,
             )

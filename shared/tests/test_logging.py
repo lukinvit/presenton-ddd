@@ -1,6 +1,9 @@
 import json
+
 import structlog
-from shared.infrastructure.logging import setup_logging, get_logger
+
+from shared.infrastructure.logging import get_logger, setup_logging
+
 
 class TestLogging:
     def test_setup_logging_configures_structlog(self) -> None:

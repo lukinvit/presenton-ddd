@@ -1,5 +1,5 @@
-import pytest
-from shared.infrastructure.database import create_engine_from_config, DatabaseConfig
+from shared.infrastructure.database import DatabaseConfig, create_engine_from_config
+
 
 class TestDatabaseConfig:
     def test_default_sqlite_config(self) -> None:
@@ -24,6 +24,7 @@ class TestDatabaseConfig:
             schema="presentation",
         )
         assert config.schema == "presentation"
+
 
 class TestCreateEngine:
     def test_creates_engine_for_sqlite(self) -> None:

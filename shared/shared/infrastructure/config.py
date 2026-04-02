@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import os
 from dataclasses import dataclass
 
 _settings_instance: Settings | None = None
+
 
 @dataclass
 class Settings:
@@ -30,11 +32,13 @@ class Settings:
             app_data_directory=os.getenv("PRESENTON_APP_DATA_DIR", "./app_data"),
         )
 
+
 def get_settings() -> Settings:
     global _settings_instance
     if _settings_instance is None:
         _settings_instance = Settings.from_env()
     return _settings_instance
+
 
 def reset_settings() -> None:
     global _settings_instance

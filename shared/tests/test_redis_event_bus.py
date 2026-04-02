@@ -1,8 +1,11 @@
 import uuid
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
+
 from shared.domain.events import DomainEvent, EventBus
 from shared.infrastructure.redis_event_bus import RedisEventBus
+
 
 class TestRedisEventBus:
     def test_implements_event_bus_protocol(self) -> None:
@@ -28,8 +31,10 @@ class TestRedisEventBus:
     @pytest.mark.asyncio
     async def test_subscribe_registers_handler(self) -> None:
         bus = RedisEventBus(redis_url="redis://localhost:6379", consumer_group="test")
+
         async def handler(event: DomainEvent) -> None:
             pass
+
         await bus.subscribe("TestEvent", handler)
         assert "TestEvent" in bus._handlers
         assert handler in bus._handlers["TestEvent"]

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from shared.domain.value_object import ValueObject
 
 
@@ -23,7 +24,7 @@ class TestValueObject:
         c = Color(hex_code="#FF0000", name="Red")
         try:
             c.hex_code = "#00FF00"  # type: ignore[misc]
-            assert False, "Should raise FrozenInstanceError"
+            raise AssertionError("Should raise FrozenInstanceError")
         except AttributeError:
             pass
 

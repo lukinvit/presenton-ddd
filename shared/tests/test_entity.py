@@ -1,5 +1,8 @@
 import uuid
-from shared.domain.entity import Entity, AggregateRoot
+
+from shared.domain.entity import AggregateRoot, Entity
+from shared.domain.entity import Entity as EntityBase
+from shared.domain.repository import Repository
 
 
 class TestEntity:
@@ -32,6 +35,7 @@ class TestAggregateRoot:
 
     def test_aggregate_root_collects_events(self) -> None:
         from shared.domain.events import DomainEvent
+
         root = AggregateRoot(id=uuid.uuid4())
         event = DomainEvent(aggregate_id=root.id, event_type="TestEvent")
         root.add_event(event)
@@ -40,28 +44,23 @@ class TestAggregateRoot:
 
     def test_aggregate_root_clears_events(self) -> None:
         from shared.domain.events import DomainEvent
+
         root = AggregateRoot(id=uuid.uuid4())
         root.add_event(DomainEvent(aggregate_id=root.id, event_type="TestEvent"))
         root.clear_events()
         assert len(root.pending_events) == 0
 
 
-# Append to shared/tests/test_entity.py
-import uuid as uuid_mod
-from shared.domain.repository import Repository
-from shared.domain.entity import Entity as EntityBase
-
-
 class TestRepositoryProtocol:
     def test_repository_is_protocol(self) -> None:
-        import typing
-
         class FakeRepo:
-            async def get(self, id: uuid_mod.UUID) -> EntityBase | None:
+            async def get(self, id: uuid.UUID) -> EntityBase | None:
                 return None
+
             async def save(self, entity: EntityBase) -> None:
                 pass
-            async def delete(self, id: uuid_mod.UUID) -> None:
+
+            async def delete(self, id: uuid.UUID) -> None:
                 pass
 
         assert isinstance(FakeRepo(), Repository)

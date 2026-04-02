@@ -1,5 +1,6 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from shared.domain.events import DomainEvent, EventBus
 
 
@@ -27,17 +28,19 @@ class TestDomainEvent:
 
     def test_domain_event_occurred_at_is_utc(self) -> None:
         event = DomainEvent(aggregate_id=uuid.uuid4(), event_type="Test")
-        assert event.occurred_at.tzinfo == timezone.utc
+        assert event.occurred_at.tzinfo == UTC
 
 
 class TestEventBusProtocol:
     def test_event_bus_is_protocol(self) -> None:
         import typing
+
         assert typing.runtime_checkable
 
         class FakeEventBus:
             async def publish(self, event: DomainEvent) -> None:
                 pass
+
             async def subscribe(self, event_type: str, handler: object) -> None:
                 pass
 

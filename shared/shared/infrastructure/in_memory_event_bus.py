@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
+
 from shared.domain.events import DomainEvent, EventHandler
+
 
 class InMemoryEventBus:
     """In-memory event bus for Electron / single-process deployments."""
+
     def __init__(self) -> None:
         self._subscribers: dict[str, list[EventHandler]] = defaultdict(list)
 

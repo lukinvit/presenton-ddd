@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Any
+
 from fastmcp import FastMCP
+
 
 class DomainMCPServer:
     """Base MCP server for a bounded context domain."""
+
     def __init__(self, name: str, port: int) -> None:
         self.name = name
         self.port = port
@@ -22,6 +26,7 @@ class DomainMCPServer:
             self.registered_tools[name] = func
             self.mcp.tool(name=name)(func)
             return func
+
         return decorator
 
     async def start(self) -> None:
