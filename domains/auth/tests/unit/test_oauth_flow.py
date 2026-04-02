@@ -1,10 +1,12 @@
 import uuid
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from domain.entities import OAuthConnection
-from domain.value_objects import EncryptedToken, OAuthProvider
-from application.commands import InitiateOAuthCommand, HandleCallbackCommand
-from application.dto import OAuthURLDTO
+
+import pytest
+
+from domains.auth.application.commands import HandleCallbackCommand, InitiateOAuthCommand
+from domains.auth.application.dto import OAuthURLDTO
+from domains.auth.domain.entities import OAuthConnection
+from domains.auth.domain.value_objects import EncryptedToken, OAuthProvider
 
 
 class TestOAuthProvider:
@@ -55,8 +57,14 @@ class TestInitiateOAuthCommand:
             "verifier123",
         )
         state_repo = AsyncMock()
-        cmd = InitiateOAuthCommand(oauth_provider_adapter=oauth_provider_adapter, state_repo=state_repo)
-        result = await cmd.execute(provider="anthropic", user_id=uuid.uuid4(), redirect_uri="http://localhost:5000/api/v1/auth/callback")
+        cmd = InitiateOAuthCommand(
+            oauth_provider_adapter=oauth_provider_adapter, state_repo=state_repo
+        )
+        result = await cmd.execute(
+            provider="anthropic",
+            user_id=uuid.uuid4(),
+            redirect_uri="http://localhost:5000/api/v1/auth/callback",
+        )
         assert isinstance(result, OAuthURLDTO)
         assert "anthropic.com" in result.authorize_url
         state_repo.save.assert_called_once()

@@ -1,13 +1,15 @@
 from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass
+
+from domains.identity.application.dto import TokenPairDTO
+from domains.identity.domain.entities import User
+from domains.identity.domain.events import EVENT_USER_LOGGED_IN, EVENT_USER_REGISTERED
+from domains.identity.domain.repositories import UserRepository
+from domains.identity.domain.services import TokenService
+from domains.identity.domain.value_objects import Email, HashedPassword
 from shared.domain.events import DomainEvent, EventBus
-from domain.entities import User
-from domain.events import EVENT_USER_LOGGED_IN, EVENT_USER_REGISTERED
-from domain.repositories import UserRepository
-from domain.services import TokenService
-from domain.value_objects import Email, HashedPassword
-from application.dto import TokenPairDTO
 
 
 @dataclass

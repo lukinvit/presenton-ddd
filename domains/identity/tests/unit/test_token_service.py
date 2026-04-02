@@ -1,21 +1,33 @@
 import uuid
-import pytest
 from datetime import timedelta
-from domain.services import TokenService
+
+import jwt
+import pytest
+
+from domains.identity.domain.services import TokenService
 
 
 class TestTokenService:
     def setup_method(self) -> None:
-        from cryptography.hazmat.primitives.asymmetric import rsa
         from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         self.private_pem = private_key.private_bytes(
-            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
         ).decode()
-        self.public_pem = private_key.public_key().public_bytes(
-            serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
-        ).decode()
-        self.service = TokenService(private_key=self.private_pem, public_key=self.public_pem, algorithm="RS256")
+        self.public_pem = (
+            private_key.public_key()
+            .public_bytes(
+                serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+            .decode()
+        )
+        self.service = TokenService(
+            private_key=self.private_pem, public_key=self.public_pem, algorithm="RS256"
+        )
 
     def test_create_access_token(self) -> None:
         user_id = uuid.uuid4()
@@ -39,10 +51,12 @@ class TestTokenService:
 
     def test_expired_token_raises(self) -> None:
         user_id = uuid.uuid4()
-        token = self.service.create_access_token(user_id=user_id, roles=[], ttl=timedelta(seconds=-1))
-        with pytest.raises(Exception):
+        token = self.service.create_access_token(
+            user_id=user_id, roles=[], ttl=timedelta(seconds=-1)
+        )
+        with pytest.raises(jwt.PyJWTError):
             self.service.verify_token(token)
 
     def test_invalid_token_raises(self) -> None:
-        with pytest.raises(Exception):
+        with pytest.raises(jwt.PyJWTError):
             self.service.verify_token("invalid.token.here")

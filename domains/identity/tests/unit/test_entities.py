@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime, timezone, timedelta
-from domain.entities import User, Session, Role
-from domain.value_objects import Email, HashedPassword, Permission
+from datetime import UTC, datetime, timedelta
+
+from domains.identity.domain.entities import Role, Session, User
+from domains.identity.domain.value_objects import Email, HashedPassword, Permission
 
 
 class TestEmail:
@@ -83,7 +84,7 @@ class TestSession:
         session = Session(
             id=uuid.uuid4(),
             user_id=uuid.uuid4(),
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
         assert session.is_expired is False
 
@@ -91,6 +92,6 @@ class TestSession:
         session = Session(
             id=uuid.uuid4(),
             user_id=uuid.uuid4(),
-            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+            expires_at=datetime.now(UTC) - timedelta(hours=1),
         )
         assert session.is_expired is True

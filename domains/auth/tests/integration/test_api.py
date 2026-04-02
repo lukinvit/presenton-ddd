@@ -1,8 +1,10 @@
-import pytest
-from httpx import ASGITransport, AsyncClient
-from fastapi import FastAPI
 from unittest.mock import AsyncMock, MagicMock
-from api.router import create_auth_router
+
+import pytest
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+
+from domains.auth.api.router import create_auth_router
 
 
 def create_test_app() -> FastAPI:
@@ -34,7 +36,13 @@ class TestAuthAPI:
         app = create_test_app()
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            resp = await client.post("/connect", json={"provider": "anthropic", "redirect_uri": "http://localhost:5000/api/v1/auth/callback"})
+            resp = await client.post(
+                "/connect",
+                json={
+                    "provider": "anthropic",
+                    "redirect_uri": "http://localhost:5000/api/v1/auth/callback",
+                },
+            )
             assert resp.status_code == 200
             data = resp.json()
             assert "authorize_url" in data
@@ -45,5 +53,8 @@ class TestAuthAPI:
         app = create_test_app()
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            resp = await client.post("/connect", json={"provider": "nonexistent", "redirect_uri": "http://localhost:5000"})
+            resp = await client.post(
+                "/connect",
+                json={"provider": "nonexistent", "redirect_uri": "http://localhost:5000"},
+            )
             assert resp.status_code == 400

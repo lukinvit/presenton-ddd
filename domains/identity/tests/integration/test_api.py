@@ -1,11 +1,13 @@
-import pytest
-from httpx import ASGITransport, AsyncClient
-from fastapi import FastAPI
 from unittest.mock import AsyncMock
-from api.router import create_identity_router
-from cryptography.hazmat.primitives.asymmetric import rsa
+
+import pytest
 from cryptography.hazmat.primitives import serialization
-from domain.services import TokenService
+from cryptography.hazmat.primitives.asymmetric import rsa
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+
+from domains.identity.api.router import create_identity_router
+from domains.identity.domain.services import TokenService
 
 
 def create_test_app() -> FastAPI:
@@ -15,8 +17,14 @@ def create_test_app() -> FastAPI:
     user_repo.save = AsyncMock()
     event_bus = AsyncMock()
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    private_pem = private_key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
-    public_pem = private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()
+    private_pem = private_key.private_bytes(
+        serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+    ).decode()
+    public_pem = (
+        private_key.public_key()
+        .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+        .decode()
+    )
     token_service = TokenService(private_key=private_pem, public_key=public_pem)
     router = create_identity_router(user_repo, event_bus, token_service)
     app.include_router(router)
@@ -29,7 +37,9 @@ class TestIdentityAPI:
         app = create_test_app()
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            resp = await client.post("/register", json={"email": "new@example.com", "password": "secret123"})
+            resp = await client.post(
+                "/register", json={"email": "new@example.com", "password": "secret123"}
+            )
             assert resp.status_code == 201
             data = resp.json()
             assert "access_token" in data

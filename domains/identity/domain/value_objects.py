@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
 import bcrypt
+
 from shared.domain.value_object import ValueObject
 
 

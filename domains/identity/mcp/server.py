@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from shared.domain.events import EventBus
-from shared.mcp.server_base import DomainMCPServer
-
 from domains.identity.domain.repositories import UserRepository
 from domains.identity.domain.services import TokenService
+from shared.domain.events import EventBus
+from shared.mcp.server_base import DomainMCPServer
 
 
 def create_identity_mcp_server(
@@ -18,7 +17,9 @@ def create_identity_mcp_server(
     async def register(email: str, password: str) -> dict:
         from domains.identity.application.commands import RegisterUserCommand
 
-        cmd = RegisterUserCommand(user_repo=user_repo, event_bus=event_bus, token_service=token_service)
+        cmd = RegisterUserCommand(
+            user_repo=user_repo, event_bus=event_bus, token_service=token_service
+        )
         result = await cmd.execute(email=email, password=password)
         return {"access_token": result.access_token, "refresh_token": result.refresh_token}
 
@@ -26,7 +27,9 @@ def create_identity_mcp_server(
     async def login(email: str, password: str) -> dict:
         from domains.identity.application.commands import LoginUserCommand
 
-        cmd = LoginUserCommand(user_repo=user_repo, event_bus=event_bus, token_service=token_service)
+        cmd = LoginUserCommand(
+            user_repo=user_repo, event_bus=event_bus, token_service=token_service
+        )
         result = await cmd.execute(email=email, password=password)
         return {"access_token": result.access_token, "refresh_token": result.refresh_token}
 

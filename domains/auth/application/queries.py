@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import uuid
 from dataclasses import dataclass
-from domain.repositories import OAuthConnectionRepository
-from domain.services import EncryptionService
-from domain.value_objects import OAuthProvider
-from application.dto import ConnectionStatusDTO
+
+from domains.auth.application.dto import ConnectionStatusDTO
+from domains.auth.domain.repositories import OAuthConnectionRepository
+from domains.auth.domain.services import EncryptionService
+from domains.auth.domain.value_objects import OAuthProvider
 
 
 @dataclass
@@ -28,9 +30,11 @@ class GetConnectionStatusQuery:
         statuses = []
         for provider in OAuthProvider:
             conn = await self.connection_repo.get_by_user_and_provider(user_id, provider)
-            statuses.append(ConnectionStatusDTO(
-                provider=provider.value,
-                connected=conn is not None,
-                expires_at=conn.expires_at.isoformat() if conn and conn.expires_at else None,
-            ))
+            statuses.append(
+                ConnectionStatusDTO(
+                    provider=provider.value,
+                    connected=conn is not None,
+                    expires_at=conn.expires_at.isoformat() if conn and conn.expires_at else None,
+                )
+            )
         return statuses

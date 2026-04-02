@@ -1,5 +1,7 @@
 import pytest
-from domain.services import EncryptionService
+from cryptography.exceptions import InvalidTag
+
+from domains.auth.domain.services import EncryptionService
 
 
 class TestEncryptionService:
@@ -25,7 +27,7 @@ class TestEncryptionService:
     def test_decrypt_with_wrong_key_raises(self) -> None:
         encrypted = self.service.encrypt("secret")
         wrong_service = EncryptionService(key="b" * 32)
-        with pytest.raises(Exception):
+        with pytest.raises(InvalidTag):
             wrong_service.decrypt(encrypted)
 
     def test_encrypt_empty_string(self) -> None:

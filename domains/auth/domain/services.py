@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 import base64
 import os
+
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 class EncryptionService:
     """AES-256-GCM encryption for token storage."""
+
     NONCE_SIZE = 12
 
     def __init__(self, key: str) -> None:
@@ -19,7 +22,7 @@ class EncryptionService:
 
     def decrypt(self, encrypted: str) -> str:
         raw = base64.b64decode(encrypted.encode("utf-8"))
-        nonce = raw[:self.NONCE_SIZE]
-        ciphertext = raw[self.NONCE_SIZE:]
+        nonce = raw[: self.NONCE_SIZE]
+        ciphertext = raw[self.NONCE_SIZE :]
         plaintext = self._aesgcm.decrypt(nonce, ciphertext, None)
         return plaintext.decode("utf-8")

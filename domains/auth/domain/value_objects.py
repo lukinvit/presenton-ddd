@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
+
 from shared.domain.value_object import ValueObject
 
 
