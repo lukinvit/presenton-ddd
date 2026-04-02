@@ -199,7 +199,7 @@ services:
     build:
       context: .
       dockerfile: gateway/Dockerfile
-    ports: ["5100:8000"]
+    expose: ["8000"]
     depends_on:
       - identity
       - auth
@@ -213,7 +213,7 @@ services:
       - export
     environment:
       PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
-      PRESENTON_ALLOWED_ORIGINS: ${PRESENTON_ALLOWED_ORIGINS:-http://localhost:5000,http://localhost:3000}
+      PRESENTON_ALLOWED_ORIGINS: ${PRESENTON_ALLOWED_ORIGINS:-http://presenton.lukinvit.tech,http://localhost:5000}
       PRESENTON_ENV: ${PRESENTON_ENV:-production}
       PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
       # Upstream URLs (service discovery via Docker DNS)
@@ -227,6 +227,14 @@ services:
       AGENT_URL: http://agent:8060
       WEB_ACCESS_URL: http://web_access:8090
       EXPORT_URL: http://export:8100
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.presenton-api.rule=Host(`presenton.lukinvit.tech`) && PathPrefix(`/api/`, `/health`, `/mcp`)"
+      - "traefik.http.routers.presenton-api.entrypoints=web"
+      - "traefik.http.services.presenton-api.loadbalancer.server.port=8000"
+    networks:
+      - default
+      - x5bm_x5bm
     restart: unless-stopped
 
   # ── Frontend ──────────────────────────────────────────────────────────────────
@@ -234,12 +242,25 @@ services:
   frontend:
     build:
       context: ./frontend
-    ports: ["5101:3000"]
+    expose: ["3000"]
     depends_on: [gateway]
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5100}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://presenton.lukinvit.tech}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.presenton-frontend.rule=Host(`presenton.lukinvit.tech`)"
+      - "traefik.http.routers.presenton-frontend.entrypoints=web"
+      - "traefik.http.routers.presenton-frontend.priority=1"
+      - "traefik.http.services.presenton-frontend.loadbalancer.server.port=3000"
+    networks:
+      - default
+      - x5bm_x5bm
     restart: unless-stopped
 
 volumes:
   redis_data:
   pg_data:
+
+networks:
+  x5bm_x5bm:
+    external: true
