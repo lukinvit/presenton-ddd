@@ -1,0 +1,196 @@
+# Development overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Key differences from production:
+#  - Source code mounted as volumes for hot-reload
+#  - Uvicorn/Next.js started in watch/reload mode
+#  - DEBUG logging, LOG_JSON=false
+#  - All ports exposed to host for direct access
+
+services:
+  # ── Infrastructure (keep as-is, just verbose logging) ─────────────────────
+  redis:
+    ports: ["6379:6379"]
+
+  postgres:
+    ports: ["5432:5432"]
+
+  # ── Domain services (hot-reload via uvicorn --reload) ─────────────────────
+
+  identity:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-identity", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+    ports: ["8080:8080", "9080:9080"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
+
+  auth:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-auth", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8070", "--reload"]
+    ports: ["8070:8070", "9070:9070"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
+
+  presentation:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-presentation", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8010", "--reload"]
+    ports: ["8010:8010", "9010:9010"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  style:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-style", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8020", "--reload"]
+    ports: ["8020:8020", "9020:9020"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  content:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-content", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8030", "--reload"]
+    ports: ["8030:8030", "9030:9030"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  rendering:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-rendering", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8040", "--reload"]
+    ports: ["8040:8040", "9040:9040"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  media:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-media", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8050", "--reload"]
+    ports: ["8050:8050", "9050:9050"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  agent:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-agent", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8060", "--reload"]
+    ports: ["8060:8060", "9060:9060"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      LLM: ${LLM:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+
+  web_access:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-web-access", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8090", "--reload"]
+    ports: ["8090:8090", "9090:9090"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  export:
+    build:
+      target: builder
+    command: ["uv", "run", "--package", "presenton-export", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8100", "--reload"]
+    ports: ["8100:8100", "9100:9100"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+
+  # ── Gateway (hot-reload) ───────────────────────────────────────────────────
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+      target: base
+    command: ["uv", "run", "--package", "presenton-gateway", "uvicorn", "api_gateway.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports: ["5000:8000"]
+    volumes:
+      - .:/app
+    environment:
+      PRESENTON_ENV: development
+      PRESENTON_LOG_JSON: "false"
+      PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
+      PRESENTON_ALLOWED_ORIGINS: ${PRESENTON_ALLOWED_ORIGINS:-http://localhost:5000,http://localhost:3000}
+
+  # ── Frontend (Next.js dev server) ─────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      target: deps
+    command: ["npm", "run", "dev"]
+    ports: ["3000:3000"]
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+      NODE_ENV: development

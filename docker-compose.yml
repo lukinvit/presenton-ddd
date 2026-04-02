@@ -1,0 +1,245 @@
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: presenton
+      POSTGRES_USER: presenton
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-presenton_dev}
+    ports: ["5432:5432"]
+    volumes: ["pg_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U presenton"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Domain services ──────────────────────────────────────────────────────────
+
+  identity:
+    build:
+      context: .
+      dockerfile: domains/identity/Dockerfile
+    expose: ["8080", "9080"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  auth:
+    build:
+      context: .
+      dockerfile: domains/auth/Dockerfile
+    expose: ["8070", "9070"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  presentation:
+    build:
+      context: .
+      dockerfile: domains/presentation/Dockerfile
+    expose: ["8010", "9010"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  style:
+    build:
+      context: .
+      dockerfile: domains/style/Dockerfile
+    expose: ["8020", "9020"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  content:
+    build:
+      context: .
+      dockerfile: domains/content/Dockerfile
+    expose: ["8030", "9030"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  rendering:
+    build:
+      context: .
+      dockerfile: domains/rendering/Dockerfile
+    expose: ["8040", "9040"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  media:
+    build:
+      context: .
+      dockerfile: domains/media/Dockerfile
+    expose: ["8050", "9050"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: .
+      dockerfile: domains/agent/Dockerfile
+    expose: ["8060", "9060"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+      LLM: ${LLM:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+    restart: unless-stopped
+
+  web_access:
+    build:
+      context: .
+      dockerfile: domains/web_access/Dockerfile
+    expose: ["8090", "9090"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  export:
+    build:
+      context: .
+      dockerfile: domains/export/Dockerfile
+    expose: ["8100", "9100"]
+    depends_on:
+      redis: { condition: service_healthy }
+      postgres: { condition: service_healthy }
+    environment:
+      PRESENTON_DATABASE_URL: ${PRESENTON_DATABASE_URL:-postgresql+asyncpg://presenton:presenton_dev@postgres:5432/presenton}
+      PRESENTON_REDIS_URL: ${PRESENTON_REDIS_URL:-redis://redis:6379}
+      PRESENTON_ENCRYPTION_KEY: ${PRESENTON_ENCRYPTION_KEY:-change-this-to-a-32-byte-secret!}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+    restart: unless-stopped
+
+  # ── Gateway ──────────────────────────────────────────────────────────────────
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports: ["5000:8000"]
+    depends_on:
+      - identity
+      - auth
+      - presentation
+      - style
+      - content
+      - rendering
+      - media
+      - agent
+      - web_access
+      - export
+    environment:
+      PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
+      PRESENTON_ALLOWED_ORIGINS: ${PRESENTON_ALLOWED_ORIGINS:-http://localhost:5000,http://localhost:3000}
+      PRESENTON_ENV: ${PRESENTON_ENV:-production}
+      PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
+      # Upstream URLs (service discovery via Docker DNS)
+      IDENTITY_URL: http://identity:8080
+      AUTH_URL: http://auth:8070
+      PRESENTATION_URL: http://presentation:8010
+      STYLE_URL: http://style:8020
+      CONTENT_URL: http://content:8030
+      RENDERING_URL: http://rendering:8040
+      MEDIA_URL: http://media:8050
+      AGENT_URL: http://agent:8060
+      WEB_ACCESS_URL: http://web_access:8090
+      EXPORT_URL: http://export:8100
+    restart: unless-stopped
+
+  # ── Frontend ──────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+    ports: ["3000:3000"]
+    depends_on: [gateway]
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  pg_data:
