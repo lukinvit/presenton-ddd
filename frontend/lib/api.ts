@@ -111,24 +111,24 @@ export const slideAPI = {
 
 // Agents
 export const agentAPI = {
-  listConfigs: () => fetchAPI<unknown[]>('/agents/configs'),
+  listConfigs: () => fetchAPI<unknown[]>('/agents'),
 
   updateConfig: (id: string, data: unknown) =>
-    fetchAPI<unknown>(`/agents/configs/${id}`, {
-      method: 'PATCH',
+    fetchAPI<unknown>(`/agents/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   startPipeline: (presentationId: string) =>
-    fetchAPI<{ run_id: string }>('/agents/pipeline/start', {
+    fetchAPI<{ run_id: string }>('/agents/pipeline', {
       method: 'POST',
       body: JSON.stringify({ presentation_id: presentationId }),
     }),
 
-  getRun: (runId: string) => fetchAPI<unknown>(`/agents/pipeline/${runId}`),
+  getRun: (runId: string) => fetchAPI<unknown>(`/agents/runs/${runId}`),
 
   approveRalph: (runId: string, approved: boolean, feedback?: string) =>
-    fetchAPI<void>(`/agents/pipeline/${runId}/approve`, {
+    fetchAPI<void>(`/agents/ralph-loop/${runId}/approve`, {
       method: 'POST',
       body: JSON.stringify({ approved, feedback }),
     }),
@@ -138,16 +138,16 @@ export const agentAPI = {
 export const styleAPI = {
   listPresets: () => fetchAPI<unknown[]>('/styles/presets'),
 
-  listProfiles: () => fetchAPI<unknown[]>('/styles/profiles'),
+  listProfiles: () => fetchAPI<unknown[]>('/styles/presets'),
 
   createProfile: (data: unknown) =>
-    fetchAPI<unknown>('/styles/profiles', {
+    fetchAPI<unknown>('/styles/presets', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   extractFromURL: (url: string) =>
-    fetchAPI<unknown>('/styles/extract', {
+    fetchAPI<unknown>('/styles/extract-from-url', {
       method: 'POST',
       body: JSON.stringify({ url }),
     }),
@@ -156,7 +156,7 @@ export const styleAPI = {
     const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
-    return fetch(`${API_BASE}/styles/upload`, {
+    return fetch(`${API_BASE}/styles/extract-from-file`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
@@ -166,13 +166,13 @@ export const styleAPI = {
 
 // Connections (OAuth)
 export const connectionAPI = {
-  list: () => fetchAPI<unknown[]>('/connections'),
+  list: () => fetchAPI<unknown[]>('/auth/connections').catch(() => [] as unknown[]),
 
   connect: (provider: string) =>
-    fetchAPI<{ auth_url: string }>(`/connections/${provider}/authorize`),
+    fetchAPI<{ auth_url: string }>(`/auth/connections/${provider}/authorize`),
 
   disconnect: (provider: string) =>
-    fetchAPI<void>(`/connections/${provider}`, { method: 'DELETE' }),
+    fetchAPI<void>(`/auth/connections/${provider}`, { method: 'DELETE' }),
 };
 
 export { APIError };

@@ -14,7 +14,7 @@ type Tab = 'presets' | 'url' | 'upload';
 
 export default function StylesSettingsPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { presets, isLoading } = useSelector(
+  const { presets, isLoading, error } = useSelector(
     (state: RootState) => state.style,
   );
   const [activeTab, setActiveTab] = useState<Tab>('presets');
@@ -68,6 +68,10 @@ export default function StylesSettingsPage() {
                       className="h-40 rounded-xl border border-slate-200 bg-slate-100 animate-pulse"
                     />
                   ))}
+                </div>
+              ) : error ? (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+                  Failed to load presets. Please try again later.
                 </div>
               ) : (
                 <PresetGallery
