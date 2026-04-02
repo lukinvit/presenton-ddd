@@ -7,7 +7,10 @@ members = [
     "presenton",
     "presenton-auth",
     "presenton-identity",
+    "presenton-presentation",
     "presenton-shared",
+    "presenton-style",
+    "presenton-web-access",
 ]
 
 [[package]]
@@ -1122,6 +1125,34 @@ dev = [
 ]
 
 [[package]]
+name = "presenton-presentation"
+version = "0.1.0"
+source = { editable = "domains/presentation" }
+dependencies = [
+    { name = "fastapi", extra = ["standard"] },
+    { name = "presenton-shared" },
+    { name = "sqlmodel" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.116.0" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
+    { name = "presenton-shared", editable = "shared" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+    { name = "sqlmodel", specifier = ">=0.0.24" },
+]
+provides-extras = ["dev"]
+
+[[package]]
 name = "presenton-shared"
 version = "0.1.0"
 source = { editable = "shared" }
@@ -1158,6 +1189,60 @@ requires-dist = [
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.0" },
     { name = "sqlmodel", specifier = ">=0.0.24" },
     { name = "structlog", specifier = ">=24.0.0" },
+]
+provides-extras = ["dev"]
+
+[[package]]
+name = "presenton-style"
+version = "0.1.0"
+source = { editable = "domains/style" }
+dependencies = [
+    { name = "fastapi", extra = ["standard"] },
+    { name = "presenton-shared" },
+    { name = "sqlmodel" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.116.0" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
+    { name = "presenton-shared", editable = "shared" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+    { name = "sqlmodel", specifier = ">=0.0.24" },
+]
+provides-extras = ["dev"]
+
+[[package]]
+name = "presenton-web-access"
+version = "0.1.0"
+source = { editable = "domains/web_access" }
+dependencies = [
+    { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
+    { name = "presenton-shared" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.116.0" },
+    { name = "httpx", specifier = ">=0.28.0" },
+    { name = "presenton-shared", editable = "shared" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
 ]
 provides-extras = ["dev"]
 
