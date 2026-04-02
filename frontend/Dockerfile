@@ -16,7 +16,7 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN npm run build
+RUN npm run build && mkdir -p /app/public
 
 # Production image, copy all the files and run next
 FROM base AS runner
