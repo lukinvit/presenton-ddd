@@ -1,11 +1,10 @@
 'use client';
 
-import { Input } from '@/components/ui/Input';
-import type { Typography } from '@/types/style';
+import type { StyleTypography } from '@/types/style';
 
 interface TypographyPickerProps {
-  typography: Typography;
-  onChange: (typography: Typography) => void;
+  typography: StyleTypography;
+  onChange: (typography: StyleTypography) => void;
 }
 
 const GOOGLE_FONTS = [
@@ -22,9 +21,12 @@ const GOOGLE_FONTS = [
 ];
 
 export function TypographyPicker({ typography, onChange }: TypographyPickerProps) {
-  const update = <K extends keyof Typography>(key: K, value: Typography[K]) => {
+  const update = <K extends keyof StyleTypography>(key: K, value: StyleTypography[K]) => {
     onChange({ ...typography, [key]: value });
   };
+
+  const bodySize = typography.sizes?.body ?? '16px';
+  const h1Size = typography.sizes?.h1 ?? '40px';
 
   return (
     <div className="space-y-4">
@@ -62,63 +64,19 @@ export function TypographyPicker({ typography, onChange }: TypographyPickerProps
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Body Size (px)"
-          type="number"
-          min={8}
-          max={24}
-          value={typography.body_size}
-          onChange={(e) => update('body_size', parseFloat(e.target.value))}
-        />
-        <Input
-          label="Heading Scale"
-          type="number"
-          min={1}
-          max={3}
-          step={0.1}
-          value={typography.heading_size_scale}
-          onChange={(e) =>
-            update('heading_size_scale', parseFloat(e.target.value))
-          }
-        />
-        <Input
-          label="Line Height"
-          type="number"
-          min={1}
-          max={3}
-          step={0.1}
-          value={typography.line_height}
-          onChange={(e) => update('line_height', parseFloat(e.target.value))}
-        />
-        <Input
-          label="Letter Spacing"
-          type="number"
-          min={-2}
-          max={10}
-          step={0.1}
-          value={typography.letter_spacing}
-          onChange={(e) =>
-            update('letter_spacing', parseFloat(e.target.value))
-          }
-        />
-      </div>
-
       {/* Preview */}
       <div
         className="rounded-lg border border-slate-200 p-4 bg-white"
         style={{
           fontFamily: typography.body_font,
-          fontSize: typography.body_size,
-          lineHeight: typography.line_height,
-          letterSpacing: typography.letter_spacing,
+          fontSize: bodySize,
         }}
       >
         <p
           className="font-bold mb-1"
           style={{
             fontFamily: typography.heading_font,
-            fontSize: typography.body_size * typography.heading_size_scale,
+            fontSize: h1Size,
           }}
         >
           Heading Preview

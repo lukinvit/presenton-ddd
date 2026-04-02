@@ -1,11 +1,10 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { styleAPI } from '@/lib/api';
-import type { StylePreset, StyleProfile, StyleState } from '@/types/style';
+import type { StylePreset, StyleState } from '@/types/style';
 
 const initialState: StyleState = {
   presets: [],
-  profiles: [],
-  currentProfile: null,
+  currentPreset: null,
   isLoading: false,
   error: null,
 };
@@ -18,32 +17,6 @@ export const fetchPresets = createAsyncThunk(
     } catch (err) {
       return rejectWithValue(
         err instanceof Error ? err.message : 'Failed to fetch presets',
-      );
-    }
-  },
-);
-
-export const fetchProfiles = createAsyncThunk(
-  'style/fetchProfiles',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await styleAPI.listProfiles();
-    } catch (err) {
-      return rejectWithValue(
-        err instanceof Error ? err.message : 'Failed to fetch profiles',
-      );
-    }
-  },
-);
-
-export const createStyleProfile = createAsyncThunk(
-  'style/createProfile',
-  async (data: Partial<StyleProfile>, { rejectWithValue }) => {
-    try {
-      return await styleAPI.createProfile(data);
-    } catch (err) {
-      return rejectWithValue(
-        err instanceof Error ? err.message : 'Failed to create style profile',
       );
     }
   },
@@ -66,8 +39,8 @@ const styleSlice = createSlice({
   name: 'style',
   initialState,
   reducers: {
-    setCurrentProfile(state, action: PayloadAction<StyleProfile | null>) {
-      state.currentProfile = action.payload;
+    setCurrentPreset(state, action: PayloadAction<StylePreset | null>) {
+      state.currentPreset = action.payload;
     },
     clearError(state) {
       state.error = null;
@@ -77,6 +50,7 @@ const styleSlice = createSlice({
     builder
       .addCase(fetchPresets.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchPresets.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -86,19 +60,12 @@ const styleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      .addCase(fetchProfiles.fulfilled, (state, action) => {
-        state.profiles = action.payload as StyleProfile[];
-      })
-      .addCase(createStyleProfile.fulfilled, (state, action) => {
-        state.profiles.push(action.payload as StyleProfile);
-        state.currentProfile = action.payload as StyleProfile;
-      })
       .addCase(extractStyleFromURL.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
-      .addCase(extractStyleFromURL.fulfilled, (state, action) => {
+      .addCase(extractStyleFromURL.fulfilled, (state) => {
         state.isLoading = false;
-        state.currentProfile = action.payload as StyleProfile;
       })
       .addCase(extractStyleFromURL.rejected, (state, action) => {
         state.isLoading = false;
@@ -107,5 +74,5 @@ const styleSlice = createSlice({
   },
 });
 
-export const { setCurrentProfile, clearError } = styleSlice.actions;
+export const { setCurrentPreset, clearError } = styleSlice.actions;
 export default styleSlice.reducer;

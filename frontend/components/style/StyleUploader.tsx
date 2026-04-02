@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { styleAPI } from '@/lib/api';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from '@/store/store';
-import { setCurrentProfile } from '@/store/slices/styleSlice';
-import type { StyleProfile } from '@/types/style';
+import { fetchPresets } from '@/store/slices/styleSlice';
 
 interface StyleUploaderProps {
   onUploaded: () => void;
@@ -28,8 +27,8 @@ export function StyleUploader({ onUploaded }: StyleUploaderProps) {
     setError('');
     setIsUploading(true);
     try {
-      const profile = await styleAPI.uploadFile(file);
-      dispatch(setCurrentProfile(profile as StyleProfile));
+      await styleAPI.uploadFile(file);
+      dispatch(fetchPresets());
       onUploaded();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');

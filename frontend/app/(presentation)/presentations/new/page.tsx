@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { createPresentation } from '@/store/slices/presentationSlice';
-import { fetchPresets, setCurrentProfile } from '@/store/slices/styleSlice';
+import { fetchPresets, setCurrentPreset } from '@/store/slices/styleSlice';
 import { startPipeline } from '@/store/slices/agentSlice';
 import { startRalphLoop } from '@/store/slices/ralphLoopSlice';
 import type { AppDispatch, RootState } from '@/store/store';
@@ -35,8 +35,7 @@ export default function NewPresentationPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { presets } = useSelector((state: RootState) => state.style);
-  const { currentProfile } = useSelector((state: RootState) => state.style);
+  const { presets, currentPreset } = useSelector((state: RootState) => state.style);
   const { configs } = useSelector((state: RootState) => state.agent);
 
   const [step, setStep] = useState<WizardStep>('topic');
@@ -86,7 +85,7 @@ export default function NewPresentationPage() {
           title: title || topic.slice(0, 60),
           topic,
           description,
-          style_profile_id: currentProfile?.id,
+          style_profile_id: currentPreset?.id,
           slide_count: slideCount,
         }),
       ).unwrap();
@@ -262,7 +261,7 @@ export default function NewPresentationPage() {
                 selectedId={selectedPreset}
                 onSelect={(p: StylePreset) => {
                   setSelectedPreset(p.id);
-                  dispatch(setCurrentProfile(null));
+                  dispatch(setCurrentPreset(null));
                 }}
               />
             )}

@@ -19,7 +19,13 @@ export function PresetGallery({
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
       {presets.map((preset) => {
         const isSelected = selectedId === preset.id;
-        const palette = preset.color_palette;
+        const colors = preset.profile?.colors;
+
+        if (!colors) return null;
+
+        const accentColor = Array.isArray(colors.accent)
+          ? colors.accent[0]
+          : colors.accent;
 
         return (
           <button
@@ -35,33 +41,33 @@ export function PresetGallery({
             {/* Color preview */}
             <div
               className="h-24 w-full"
-              style={{ backgroundColor: palette.background }}
+              style={{ backgroundColor: colors.background }}
             >
               <div className="p-3 space-y-1.5">
                 <div
                   className="h-3 w-3/4 rounded"
-                  style={{ backgroundColor: palette.primary }}
+                  style={{ backgroundColor: colors.primary }}
                 />
                 <div
                   className="h-2 w-full rounded"
-                  style={{ backgroundColor: palette.text_primary, opacity: 0.3 }}
+                  style={{ backgroundColor: colors.text, opacity: 0.3 }}
                 />
                 <div
                   className="h-2 w-2/3 rounded"
-                  style={{ backgroundColor: palette.text_secondary, opacity: 0.2 }}
+                  style={{ backgroundColor: colors.text, opacity: 0.2 }}
                 />
                 <div className="flex gap-1 mt-2">
                   <div
                     className="h-4 w-8 rounded"
-                    style={{ backgroundColor: palette.primary }}
+                    style={{ backgroundColor: colors.primary }}
                   />
                   <div
                     className="h-4 w-8 rounded"
-                    style={{ backgroundColor: palette.secondary }}
+                    style={{ backgroundColor: colors.secondary }}
                   />
                   <div
                     className="h-4 w-8 rounded"
-                    style={{ backgroundColor: palette.accent }}
+                    style={{ backgroundColor: accentColor }}
                   />
                 </div>
               </div>
