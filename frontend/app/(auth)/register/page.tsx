@@ -16,16 +16,14 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     email: '',
-    username: '',
     password: '',
-    full_name: '',
   });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const result = await dispatch(register(form));
     if (register.fulfilled.match(result)) {
-      router.push('/dashboard');
+      router.push('/presentations');
     }
   };
 
@@ -48,14 +46,6 @@ export default function RegisterPage() {
         <div className="rounded-2xl bg-white p-8 shadow-sm border border-slate-200">
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Full Name"
-              type="text"
-              autoComplete="name"
-              value={form.full_name}
-              onChange={update('full_name')}
-              placeholder="Jane Smith"
-            />
-            <Input
               label="Email"
               type="email"
               autoComplete="email"
@@ -65,22 +55,13 @@ export default function RegisterPage() {
               placeholder="jane@example.com"
             />
             <Input
-              label="Username"
-              type="text"
-              autoComplete="username"
-              required
-              value={form.username}
-              onChange={update('username')}
-              placeholder="jane_smith"
-            />
-            <Input
               label="Password"
               type="password"
               autoComplete="new-password"
               required
               value={form.password}
               onChange={update('password')}
-              placeholder="At least 8 characters"
+              placeholder="At least 6 characters"
               hint="Use a strong, unique password"
             />
 

@@ -28,7 +28,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {user && (
             <span className="text-sm text-slate-500 mr-2">
-              {user.username}
+              {user.email}
             </span>
           )}
           <Link
