@@ -213,7 +213,7 @@ services:
       - export
     environment:
       PRESENTON_JWT_SECRET: ${PRESENTON_JWT_SECRET:-change-this-jwt-secret}
-      PRESENTON_ALLOWED_ORIGINS: ${PRESENTON_ALLOWED_ORIGINS:-http://presenton.lukinvit.tech,http://localhost:5000}
+      PRESENTON_ALLOWED_ORIGINS: ${PRESENTON_ALLOWED_ORIGINS:-https://presenton.lukinvit.tech,http://localhost:5000}
       PRESENTON_ENV: ${PRESENTON_ENV:-production}
       PRESENTON_LOG_JSON: ${PRESENTON_LOG_JSON:-true}
       # Upstream URLs (service discovery via Docker DNS)
@@ -230,7 +230,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.presenton-api.rule=Host(`presenton.lukinvit.tech`) && PathPrefix(`/api/`, `/health`, `/mcp`)"
-      - "traefik.http.routers.presenton-api.entrypoints=web"
+      - "traefik.http.routers.presenton-api.entrypoints=websecure"
+      - "traefik.http.routers.presenton-api.tls=true"
+      - "traefik.http.routers.presenton-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.presenton-api.loadbalancer.server.port=8000"
     networks:
       - default
@@ -245,11 +247,13 @@ services:
     expose: ["3000"]
     depends_on: [gateway]
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://presenton.lukinvit.tech}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://presenton.lukinvit.tech}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.presenton-frontend.rule=Host(`presenton.lukinvit.tech`)"
-      - "traefik.http.routers.presenton-frontend.entrypoints=web"
+      - "traefik.http.routers.presenton-frontend.entrypoints=websecure"
+      - "traefik.http.routers.presenton-frontend.tls=true"
+      - "traefik.http.routers.presenton-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.presenton-frontend.priority=1"
       - "traefik.http.services.presenton-frontend.loadbalancer.server.port=3000"
     networks:
