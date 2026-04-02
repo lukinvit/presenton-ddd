@@ -5,9 +5,11 @@ requires-python = ">=3.11, <3.13"
 [manifest]
 members = [
     "presenton",
+    "presenton-agent",
     "presenton-auth",
     "presenton-content",
     "presenton-export",
+    "presenton-gateway",
     "presenton-identity",
     "presenton-media",
     "presenton-presentation",
@@ -1047,6 +1049,44 @@ version = "1.0.0"
 source = { virtual = "." }
 
 [[package]]
+name = "presenton-agent"
+version = "0.1.0"
+source = { editable = "domains/agent" }
+dependencies = [
+    { name = "fastapi", extra = ["standard"] },
+    { name = "presenton-shared" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.116.0" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
+    { name = "presenton-shared", editable = "shared" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+]
+
+[[package]]
 name = "presenton-auth"
 version = "0.1.0"
 source = { editable = "domains/auth" }
@@ -1147,6 +1187,36 @@ dev = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
 ]
+
+[[package]]
+name = "presenton-gateway"
+version = "0.1.0"
+source = { editable = "gateway" }
+dependencies = [
+    { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
+    { name = "presenton-shared" },
+    { name = "pyjwt", extra = ["crypto"] },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "cryptography" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cryptography", marker = "extra == 'dev'", specifier = ">=43.0.0" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.116.0" },
+    { name = "httpx", specifier = ">=0.28.0" },
+    { name = "presenton-shared", editable = "shared" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.9.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24.0" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "presenton-identity"

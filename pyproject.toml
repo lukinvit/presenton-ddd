@@ -5,7 +5,7 @@ description = "Open-source AI presentation generator — DDD + MCP architecture"
 requires-python = ">=3.11,<3.13"
 
 [tool.uv.workspace]
-members = ["shared", "domains/*"]
+members = ["shared", "domains/*", "gateway"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "shared"]
