@@ -9,14 +9,13 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import SQLModel, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import SQLModel
 
 from domains.identity.api.router import create_identity_router
 from domains.identity.domain.services import TokenService
 from domains.identity.domain.value_objects import Email, HashedPassword
 from domains.identity.domain.entities import User
-from domains.identity.infrastructure.db_models import UserModel  # registers table metadata
+from domains.identity.infrastructure.db_models import UserModel  # noqa: F401 – registers table metadata
 from domains.identity.infrastructure.repositories import SQLUserRepository
 from shared.infrastructure.config import get_settings
 from shared.infrastructure.database import DatabaseConfig, create_engine_from_config
@@ -48,17 +47,16 @@ def create_app() -> FastAPI:
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
 
-        # Seed default admin user if the users table is empty
-        async with AsyncSession(engine) as session:
-            result = await session.exec(select(UserModel).limit(1))
-            if result.first() is None:
-                admin = User(
-                    id=uuid.uuid4(),
-                    email=Email(value=_ADMIN_EMAIL),
-                    password=HashedPassword.from_plain(_ADMIN_PASSWORD),
-                    roles=[],
-                )
-                await user_repo.save(admin)
+        # Seed default admin user if it doesn't already exist
+        existing_admin = await user_repo.get_by_email(_ADMIN_EMAIL)
+        if existing_admin is None:
+            admin = User(
+                id=uuid.uuid4(),
+                email=Email(value=_ADMIN_EMAIL),
+                password=HashedPassword.from_plain(_ADMIN_PASSWORD),
+                roles=[],
+            )
+            await user_repo.save(admin)
 
         yield
         await engine.dispose()

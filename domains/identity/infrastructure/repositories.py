@@ -52,8 +52,8 @@ class SQLUserRepository:
     async def get_by_email(self, email: str) -> User | None:
         async with AsyncSession(self._engine) as session:
             stmt = select(UserModel).where(UserModel.email == email.lower().strip())
-            result = await session.exec(stmt)
-            model = result.first()
+            result = await session.execute(stmt)
+            model = result.scalars().first()
             if model is None:
                 return None
             return _model_to_entity(model)
