@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import timezone
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlmodel import select
@@ -27,12 +28,14 @@ def _model_to_entity(model: UserModel) -> User:
 
 def _entity_to_model(user: User) -> UserModel:
     role_names = [r.name for r in user.roles]
+    # Strip timezone info: the DB column is TIMESTAMP WITHOUT TIME ZONE
+    created_at = user.created_at.replace(tzinfo=None) if user.created_at.tzinfo else user.created_at
     return UserModel(
         id=user.id,
         email=user.email.value,
         password_hash=user.password.hash_value,
         roles_json=json.dumps(role_names),
-        created_at=user.created_at,
+        created_at=created_at,
     )
 
 
