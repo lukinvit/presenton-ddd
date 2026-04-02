@@ -1,0 +1,29 @@
+{
+  "name": "presenton-desktop",
+  "productName": "Presenton",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsc && electron .",
+    "build:ts": "tsc",
+    "build:electron": "electron-builder",
+    "setup": "npm install && cd ../frontend && npm install"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1"
+  },
+  "devDependencies": {
+    "electron": "^36.1.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.8.3"
+  },
+  "build": {
+    "appId": "ai.presenton.desktop",
+    "productName": "Presenton",
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "resources/**/*", "embedded/**/*"],
+    "mac": { "category": "public.app-category.productivity" },
+    "win": { "target": "nsis" },
+    "linux": { "target": ["AppImage", "deb"] }
+  }
+}
