@@ -1,0 +1,2 @@
+# Place icon.png (1024x1024) and tray_icon.png (22x22 or 16x16) here.
+# These are referenced by electron/app/main.ts via getResourcePath().
