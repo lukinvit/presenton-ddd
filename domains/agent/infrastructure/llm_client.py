@@ -155,6 +155,21 @@ class LLMClient:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def extract_json(text: str) -> dict | list | None:
+        """Extract a JSON object or array from LLM output that may contain markdown fences."""
+        cleaned = re.sub(r"```(?:json)?\s*", "", text)
+        cleaned = re.sub(r"```", "", cleaned)
+        # Try object first, then array
+        for pattern in (r"\{.*\}", r"\[.*\]"):
+            match = re.search(pattern, cleaned, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group())
+                except json.JSONDecodeError:
+                    continue
+        return None
+
+    @staticmethod
     def extract_json_array(text: str) -> list[dict] | None:
         """Extract a JSON array from LLM output that may contain markdown fences."""
         # Strip markdown code fences

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import logging
-import re
 import uuid
 from contextlib import asynccontextmanager
 from dataclasses import asdict
@@ -116,112 +114,57 @@ def create_app() -> FastAPI:
 
     @app.post("/api/v1/agents/generate")
     async def generate_presentation(request: dict) -> dict:
-        """Run a simplified production pipeline: ContentWriter -> SlideAssembler."""
-        brief = request.get("brief", "")
-        style_guide = request.get("style_guide", "")
+        """Run the 10-stage pipeline to generate a full presentation."""
+        from domains.agent.infrastructure.pipeline_engine import PipelineEngine, PipelineError
+
+        conversation = request.get("messages", request.get("conversation", []))
         slide_count = request.get("slide_count", 10)
+        presentation_id = request.get("presentation_id")
+
+        # Support legacy "brief" field: wrap it as a conversation message
+        if not conversation and request.get("brief"):
+            conversation = [{"role": "user", "content": request["brief"]}]
+
+        if not presentation_id:
+            presentation_id = str(uuid.uuid4())
+
+        ws = Workspace(presentation_id)
+        ws.initialize()
 
         llm = _get_llm()
-
-        # --- Step 1: ContentWriter generates slide content ---
-        content_config = DEFAULT_AGENTS["ContentWriter"]
-        content_prompt = (
-            f"Based on this creative brief, generate content for {slide_count} slides.\n\n"
-            f"BRIEF:\n{brief}\n\n"
-            f"STYLE GUIDE:\n{style_guide}\n\n"
-            "Output JSON array with one object per slide:\n"
-            "[\n"
-            '  {{\n'
-            '    "index": 0,\n'
-            '    "title": "Slide Title",\n'
-            '    "body": "Content text with bullet points",\n'
-            '    "speaker_notes": "What to say",\n'
-            '    "layout_type": "title_slide|content|two_column|image_full|data_chart|quote|section_divider",\n'
-            '    "image_needs": "description of needed image or empty string"\n'
-            "  }}\n"
-            "]\n"
-        )
+        engine = PipelineEngine(ws, llm)
 
         try:
-            content_response = await llm.chat(
-                provider=content_config.provider,
-                model=content_config.model,
-                system_prompt=content_config.system_prompt,
-                messages=[{"role": "user", "content": content_prompt}],
-                temperature=content_config.temperature,
-                max_tokens=content_config.max_tokens * 2,
+            results = await engine.run_full_pipeline(
+                conversation=conversation,
+                slide_count=slide_count,
+                mode=request.get("mode", "from_scratch"),
             )
+        except PipelineError as exc:
+            state = ws.load_state()
+            raise HTTPException(
+                422,
+                {
+                    "error": f"Pipeline halted at {exc.stage}",
+                    "failed_gates": exc.failed_gates,
+                    "pipeline_state": asdict(state) if state else {},
+                },
+            ) from exc
         except Exception as exc:
-            logger.exception("ContentWriter LLM call failed")
-            raise HTTPException(502, f"ContentWriter failed: {exc}") from exc
+            logger.exception("Pipeline failed")
+            raise HTTPException(502, f"Pipeline error: {exc}") from exc
 
-        # Parse slides JSON
-        slides_data = LLMClient.extract_json_array(content_response.content)
-        if not slides_data:
-            slides_data = [
-                {
-                    "index": 0,
-                    "title": "Generated Presentation",
-                    "body": content_response.content,
-                    "layout_type": "content",
-                }
-            ]
+        render = results.get("render_qa", {})
+        package = results.get("package", {})
+        state = ws.load_state()
 
-        # --- Step 2: SlideAssembler generates HTML per slide ---
-        assembler_config = DEFAULT_AGENTS["SlideAssembler"]
-        html_slides: list[dict] = []
-
-        for slide in slides_data:
-            html_prompt = (
-                "Create a complete HTML slide (1920x1080) for this content.\n\n"
-                f"SLIDE DATA:\n{json.dumps(slide)}\n\n"
-                f"STYLE GUIDE:\n{style_guide}\n\n"
-                "Requirements:\n"
-                "- Self-contained HTML with inline CSS\n"
-                "- 1920x1080 viewport\n"
-                "- Use the color palette and typography from the style guide\n"
-                "- Clean, professional design\n"
-                "- Include all content from the slide data\n\n"
-                'Output ONLY the HTML (no markdown, no explanation). Start with <div class="slide"> and end with </div>.\n'
-            )
-
-            try:
-                html_response = await llm.chat(
-                    provider=assembler_config.provider,
-                    model=assembler_config.model,
-                    system_prompt=assembler_config.system_prompt,
-                    messages=[{"role": "user", "content": html_prompt}],
-                    temperature=assembler_config.temperature,
-                    max_tokens=assembler_config.max_tokens,
-                )
-            except Exception as exc:
-                logger.warning("SlideAssembler failed for slide %s: %s", slide.get("index"), exc)
-                html_response_content = f'<div class="slide"><h1>{slide.get("title", "Slide")}</h1><p>{slide.get("body", "")}</p></div>'
-                html_slides.append(
-                    {
-                        "index": slide.get("index", len(html_slides)),
-                        "title": slide.get("title", f"Slide {len(html_slides) + 1}"),
-                        "html": html_response_content,
-                        "speaker_notes": slide.get("speaker_notes", ""),
-                    }
-                )
-                continue
-
-            # Strip markdown fences if present
-            html_text = html_response.content
-            html_text = re.sub(r"^```html?\s*", "", html_text, flags=re.MULTILINE)
-            html_text = re.sub(r"```\s*$", "", html_text, flags=re.MULTILINE)
-
-            html_slides.append(
-                {
-                    "index": slide.get("index", len(html_slides)),
-                    "title": slide.get("title", f"Slide {len(html_slides) + 1}"),
-                    "html": html_text.strip(),
-                    "speaker_notes": slide.get("speaker_notes", ""),
-                }
-            )
-
-        return {"slides": html_slides, "slide_count": len(html_slides)}
+        return {
+            "presentation_id": presentation_id,
+            "slides": render.get("slides", []),
+            "slide_count": len(render.get("slides", [])),
+            "pipeline_state": asdict(state) if state else {},
+            "output_files": package.get("files", []),
+        }
 
     # ------------------------------------------------------------------
     # Workspace endpoints
