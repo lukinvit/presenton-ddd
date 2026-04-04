@@ -1,31 +1,17 @@
-export type AgentRole =
-  | 'orchestrator'
-  | 'researcher'
-  | 'content_writer'
-  | 'designer'
-  | 'fact_checker'
-  | 'ralph';
-
-export type AgentModel =
-  | 'claude-3-5-sonnet-20241022'
-  | 'claude-3-opus-20240229'
-  | 'claude-3-haiku-20240307'
-  | 'gpt-4o'
-  | 'gpt-4o-mini'
-  | 'gpt-4-turbo';
-
-export interface AgentConfig {
-  id: string;
-  role: AgentRole;
-  name: string;
-  model: AgentModel;
+export interface AgentConfigDetails {
+  model: string;
+  provider: string;
   system_prompt: string;
   temperature: number;
   max_tokens: number;
-  tools_enabled: string[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  tools: string[];
+}
+
+export interface AgentConfig {
+  id: string;
+  name: string;
+  config: AgentConfigDetails;
+  enabled: boolean;
 }
 
 export type AgentRunStatus =

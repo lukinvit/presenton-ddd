@@ -9,7 +9,11 @@ import {
 import type { AppDispatch, RootState } from '@/store/store';
 import { AgentCard } from '@/components/agents/AgentCard';
 import { AgentConfigEditor } from '@/components/agents/AgentConfigEditor';
-import type { AgentConfig } from '@/types/agent';
+import type { AgentConfig, AgentConfigDetails } from '@/types/agent';
+
+type AgentConfigUpdate = Partial<Omit<AgentConfig, 'config'>> & {
+  config?: Partial<AgentConfigDetails>;
+};
 
 export default function AgentsSettingsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,8 +26,8 @@ export default function AgentsSettingsPage() {
     dispatch(fetchAgentConfigs());
   }, [dispatch]);
 
-  const handleSave = async (id: string, data: Partial<AgentConfig>) => {
-    await dispatch(updateAgentConfig({ id, data }));
+  const handleSave = async (id: string, data: AgentConfigUpdate) => {
+    await dispatch(updateAgentConfig({ id, data: data as Partial<AgentConfig> }));
   };
 
   return (

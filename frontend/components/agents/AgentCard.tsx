@@ -8,15 +8,6 @@ interface AgentCardProps {
   onEdit: (config: AgentConfig) => void;
 }
 
-const roleLabels: Record<string, string> = {
-  orchestrator: 'Orchestrator',
-  researcher: 'Researcher',
-  content_writer: 'Content Writer',
-  designer: 'Designer',
-  fact_checker: 'Fact Checker',
-  ralph: 'Ralph (QA)',
-};
-
 export function AgentCard({ config, onEdit }: AgentCardProps) {
   return (
     <Card className="flex flex-col gap-0">
@@ -28,22 +19,20 @@ export function AgentCard({ config, onEdit }: AgentCardProps) {
             </div>
             <div>
               <h3 className="font-semibold text-slate-900">{config.name}</h3>
-              <p className="text-xs text-slate-500">
-                {roleLabels[config.role] ?? config.role}
-              </p>
+              <p className="text-xs text-slate-500">{config.config.provider}</p>
             </div>
           </div>
           <span
             className={`flex items-center gap-1 text-xs font-medium ${
-              config.is_active ? 'text-green-600' : 'text-slate-400'
+              config.enabled ? 'text-green-600' : 'text-slate-400'
             }`}
           >
-            {config.is_active ? (
+            {config.enabled ? (
               <CheckCircle className="h-3.5 w-3.5" />
             ) : (
               <XCircle className="h-3.5 w-3.5" />
             )}
-            {config.is_active ? 'Active' : 'Inactive'}
+            {config.enabled ? 'Active' : 'Inactive'}
           </span>
         </div>
 
@@ -51,17 +40,17 @@ export function AgentCard({ config, onEdit }: AgentCardProps) {
           <div className="flex items-center justify-between">
             <span className="text-slate-500">Model</span>
             <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
-              {config.model}
+              {config.config.model || 'n/a'}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-500">Temperature</span>
-            <span className="text-slate-700">{config.temperature}</span>
+            <span className="text-slate-700">{config.config.temperature}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-slate-500">Max Tokens</span>
             <span className="text-slate-700">
-              {config.max_tokens.toLocaleString()}
+              {config.config.max_tokens.toLocaleString()}
             </span>
           </div>
         </div>

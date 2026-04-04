@@ -4,22 +4,25 @@ import { useState } from 'react';
 import { Dialog, DialogFooter } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
-import type { AgentConfig, AgentModel } from '@/types/agent';
+import type { AgentConfig, AgentConfigDetails } from '@/types/agent';
+
+type AgentConfigUpdate = Partial<Omit<AgentConfig, 'config'>> & {
+  config?: Partial<AgentConfigDetails>;
+};
 
 interface AgentConfigEditorProps {
   config: AgentConfig;
   open: boolean;
   onClose: () => void;
-  onSave: (id: string, data: Partial<AgentConfig>) => Promise<void>;
+  onSave: (id: string, data: AgentConfigUpdate) => Promise<void>;
 }
 
-const MODELS: AgentModel[] = [
-  'claude-3-5-sonnet-20241022',
-  'claude-3-opus-20240229',
-  'claude-3-haiku-20240307',
+const MODELS: string[] = [
+  'claude-opus-4-6',
+  'claude-sonnet-4-6',
+  'claude-haiku-4-5',
   'gpt-4o',
   'gpt-4o-mini',
-  'gpt-4-turbo',
 ];
 
 export function AgentConfigEditor({
@@ -30,11 +33,13 @@ export function AgentConfigEditor({
 }: AgentConfigEditorProps) {
   const [form, setForm] = useState({
     name: config.name,
-    model: config.model,
-    system_prompt: config.system_prompt,
-    temperature: config.temperature,
-    max_tokens: config.max_tokens,
-    is_active: config.is_active,
+    enabled: config.enabled,
+    config: {
+      model: config.config.model,
+      system_prompt: config.config.system_prompt,
+      temperature: config.config.temperature,
+      max_tokens: config.config.max_tokens,
+    },
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,9 +71,9 @@ export function AgentConfigEditor({
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-slate-700">Model</label>
           <select
-            value={form.model}
+            value={form.config.model}
             onChange={(e) =>
-              setForm({ ...form, model: e.target.value as AgentModel })
+              setForm({ ...form, config: { ...form.config, model: e.target.value } })
             }
             className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
@@ -82,9 +87,9 @@ export function AgentConfigEditor({
 
         <Textarea
           label="System Prompt"
-          value={form.system_prompt}
+          value={form.config.system_prompt}
           onChange={(e) =>
-            setForm({ ...form, system_prompt: e.target.value })
+            setForm({ ...form, config: { ...form.config, system_prompt: e.target.value } })
           }
           className="min-h-[140px]"
         />
@@ -96,9 +101,9 @@ export function AgentConfigEditor({
             min={0}
             max={2}
             step={0.1}
-            value={form.temperature}
+            value={form.config.temperature}
             onChange={(e) =>
-              setForm({ ...form, temperature: parseFloat(e.target.value) })
+              setForm({ ...form, config: { ...form.config, temperature: parseFloat(e.target.value) } })
             }
           />
           <Input
@@ -107,9 +112,9 @@ export function AgentConfigEditor({
             min={100}
             max={200000}
             step={100}
-            value={form.max_tokens}
+            value={form.config.max_tokens}
             onChange={(e) =>
-              setForm({ ...form, max_tokens: parseInt(e.target.value) })
+              setForm({ ...form, config: { ...form.config, max_tokens: parseInt(e.target.value) } })
             }
           />
         </div>
@@ -117,8 +122,8 @@ export function AgentConfigEditor({
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={form.is_active}
-            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+            checked={form.enabled}
+            onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
             className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
           />
           <span className="text-sm font-medium text-slate-700">Active</span>

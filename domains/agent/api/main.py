@@ -40,16 +40,16 @@ def create_app() -> FastAPI:
     )
 
     from domains.agent.domain.repositories import (
-        AgentRepository,
         AgentPipelineRepository,
         AgentRunRepository,
         RalphLoopRepository,
     )
     from domains.agent.domain.services import SubAgentExecutor
+    from domains.agent.infrastructure.repositories import InMemoryAgentRepository
     from unittest.mock import AsyncMock  # TODO: replace with real repos + executor
     run_repo: AgentRunRepository = AsyncMock(spec=AgentRunRepository)  # type: ignore[assignment]
     pipeline_repo: AgentPipelineRepository = AsyncMock(spec=AgentPipelineRepository)  # type: ignore[assignment]
-    agent_repo: AgentRepository = AsyncMock(spec=AgentRepository)  # type: ignore[assignment]
+    agent_repo = InMemoryAgentRepository()
     ralph_repo: RalphLoopRepository = AsyncMock(spec=RalphLoopRepository)  # type: ignore[assignment]
     executor: SubAgentExecutor = AsyncMock(spec=SubAgentExecutor)  # type: ignore[assignment]
 

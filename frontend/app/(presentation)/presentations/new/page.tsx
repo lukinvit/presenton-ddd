@@ -307,7 +307,7 @@ export default function NewPresentationPage() {
             ) : (
               <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
                 {configs
-                  .filter((c) => c.is_active)
+                  .filter((c) => c.enabled)
                   .map((config) => (
                     <div
                       key={config.id}
@@ -317,10 +317,10 @@ export default function NewPresentationPage() {
                         <p className="text-sm font-medium text-slate-900">
                           {config.name}
                         </p>
-                        <p className="text-xs text-slate-500">{config.role}</p>
+                        <p className="text-xs text-slate-500">{config.config.provider}</p>
                       </div>
                       <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                        {config.model}
+                        {config.config.model}
                       </span>
                     </div>
                   ))}
