@@ -164,15 +164,20 @@ export const styleAPI = {
   },
 };
 
-// Connections (OAuth)
+// Connections (API Key)
 export const connectionAPI = {
-  list: () => fetchAPI<unknown[]>('/auth/connections').catch(() => [] as unknown[]),
+  list: () => fetchAPI<Array<{ provider: string; connected: boolean }>>('/auth/connections').catch(() => [] as Array<{ provider: string; connected: boolean }>),
 
-  connect: (provider: string) =>
-    fetchAPI<{ auth_url: string }>(`/auth/connections/${provider}/authorize`),
+  connect: (provider: string, apiKey: string) =>
+    fetchAPI<{ status: string; provider: string }>('/auth/connect/api-key', {
+      method: 'POST',
+      body: JSON.stringify({ provider, api_key: apiKey }),
+    }),
 
   disconnect: (provider: string) =>
-    fetchAPI<void>(`/auth/connections/${provider}`, { method: 'DELETE' }),
+    fetchAPI<{ status: string; provider: string }>(`/auth/disconnect/${provider}`, {
+      method: 'POST',
+    }),
 };
 
 export { APIError };

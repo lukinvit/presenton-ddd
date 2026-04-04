@@ -6,14 +6,21 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from domains.auth.api.router import create_auth_router
 from domains.auth.domain.services import EncryptionService
+from domains.auth.infrastructure.connection_store import InMemoryConnectionStore
 from shared.infrastructure.config import get_settings
 from shared.infrastructure.database import DatabaseConfig, create_engine_from_config
 from shared.infrastructure.in_memory_event_bus import InMemoryEventBus
+
+
+class StoreApiKeyRequest(BaseModel):
+    provider: str
+    api_key: str
 
 
 def create_app() -> FastAPI:
@@ -24,6 +31,7 @@ def create_app() -> FastAPI:
 
     encryption_key = settings.encryption_key or os.getenv("PRESENTON_ENCRYPTION_KEY", "")
     encryption_service = EncryptionService(key=encryption_key)
+    connection_store = InMemoryConnectionStore(encryption_service=encryption_service)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -60,6 +68,30 @@ def create_app() -> FastAPI:
         event_bus=event_bus,
     )
     app.include_router(router, prefix="/api/v1")
+
+    # --- API Key connection endpoints ---
+    # Gateway routes /api/v1/auth/* → auth domain /api/v1/auth/*
+
+    @app.post("/api/v1/auth/connect/api-key")
+    async def store_api_key(req: StoreApiKeyRequest) -> dict:
+        allowed_providers = {"anthropic", "openai", "google", "ollama"}
+        if req.provider not in allowed_providers:
+            raise HTTPException(status_code=400, detail=f"Unknown provider: {req.provider}")
+        if not req.api_key.strip():
+            raise HTTPException(status_code=422, detail="api_key must not be empty")
+        connection_store.store_key(req.provider, req.api_key.strip())
+        return {"status": "connected", "provider": req.provider}
+
+    @app.get("/api/v1/auth/connections")
+    async def list_connections() -> list[dict]:
+        return connection_store.list_connections()
+
+    @app.post("/api/v1/auth/disconnect/{provider}")
+    async def disconnect_provider(provider: str) -> dict:
+        connection_store.disconnect(provider)
+        return {"status": "disconnected", "provider": provider}
+
+    # ---
 
     @app.get("/health")
     async def health() -> dict[str, str]:
