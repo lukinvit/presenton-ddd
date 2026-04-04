@@ -5,11 +5,15 @@ from __future__ import annotations
 import json
 import logging
 import re
+import uuid
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from domains.agent.infrastructure.workspace import Workspace
 
 from domains.agent.api.router import create_agent_router
 from domains.agent.domain.defaults import DEFAULT_AGENTS
@@ -218,6 +222,43 @@ def create_app() -> FastAPI:
             )
 
         return {"slides": html_slides, "slide_count": len(html_slides)}
+
+    # ------------------------------------------------------------------
+    # Workspace endpoints
+    # ------------------------------------------------------------------
+
+    @app.post("/api/v1/agents/workspace")
+    async def create_workspace():
+        """Create a new presentation workspace."""
+        pid = str(uuid.uuid4())
+        ws = Workspace(pid)
+        ws.initialize()
+        state = ws.load_state()
+        return {"presentation_id": pid, "state": asdict(state)}
+
+    @app.get("/api/v1/agents/workspace/{presentation_id}")
+    async def get_workspace_state(presentation_id: str):
+        """Get current pipeline state."""
+        ws = Workspace(presentation_id)
+        state = ws.load_state()
+        if state is None:
+            raise HTTPException(404, "Workspace not found")
+        return asdict(state)
+
+    @app.get("/api/v1/agents/workspace/{presentation_id}/artifact/{filename:path}")
+    async def get_artifact(presentation_id: str, filename: str):
+        """Read an artifact from the workspace."""
+        ws = Workspace(presentation_id)
+        if filename.endswith(".json"):
+            data = ws.read_json(filename)
+            if data is None:
+                raise HTTPException(404, f"Artifact not found: {filename}")
+            return data
+        else:
+            text = ws.read_text(filename)
+            if text is None:
+                raise HTTPException(404, f"Artifact not found: {filename}")
+            return {"content": text, "filename": filename}
 
     # ------------------------------------------------------------------
 
