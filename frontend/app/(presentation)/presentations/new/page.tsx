@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
-import { ChevronRight, ChevronLeft, Send, Sparkles } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Send, Sparkles, CheckCircle2, Circle, Loader2, Download } from 'lucide-react';
 import { fetchPresets, setCurrentPreset } from '@/store/slices/styleSlice';
 import type { AppDispatch, RootState } from '@/store/store';
 import { Button } from '@/components/ui/Button';
@@ -29,12 +29,50 @@ interface GeneratedSlide {
   speaker_notes: string;
 }
 
+interface PipelineStageInfo {
+  key: string;
+  label: string;
+  /** Approximate seconds from start when this stage typically begins */
+  estimatedStartSec: number;
+}
+
+const PIPELINE_STAGES: PipelineStageInfo[] = [
+  { key: 'INTAKE',     label: 'Analyzing requirements',   estimatedStartSec: 0   },
+  { key: 'INGEST',     label: 'Collecting materials',     estimatedStartSec: 15  },
+  { key: 'PARSE',      label: 'Parsing structure',        estimatedStartSec: 30  },
+  { key: 'STRATEGY',   label: 'Choosing strategy',        estimatedStartSec: 45  },
+  { key: 'BASE',       label: 'Building design system',   estimatedStartSec: 60  },
+  { key: 'CONTENT',    label: 'Writing slide content',    estimatedStartSec: 80  },
+  { key: 'ASSETS',     label: 'Preparing assets',         estimatedStartSec: 120 },
+  { key: 'ENRICHMENT', label: 'Verifying facts',          estimatedStartSec: 150 },
+  { key: 'RENDER_QA',  label: 'Rendering & QA',           estimatedStartSec: 180 },
+  { key: 'PACKAGE',    label: 'Packaging deliverables',   estimatedStartSec: 220 },
+];
+
 const STEPS: { key: WizardStep; label: string }[] = [
   { key: 'interview', label: 'Interview' },
   { key: 'style', label: 'Style' },
   { key: 'generate', label: 'Generate' },
   { key: 'results', label: 'Results' },
 ];
+
+type StageStatus = 'pending' | 'running' | 'completed';
+
+function getOptimisticStageStatuses(elapsedSec: number): Record<string, StageStatus> {
+  const result: Record<string, StageStatus> = {};
+  for (let i = 0; i < PIPELINE_STAGES.length; i++) {
+    const stage = PIPELINE_STAGES[i];
+    const nextStage = PIPELINE_STAGES[i + 1];
+    if (elapsedSec < stage.estimatedStartSec) {
+      result[stage.key] = 'pending';
+    } else if (!nextStage || elapsedSec < nextStage.estimatedStartSec) {
+      result[stage.key] = 'running';
+    } else {
+      result[stage.key] = 'completed';
+    }
+  }
+  return result;
+}
 
 export default function NewPresentationPage() {
   const router = useRouter();
@@ -56,9 +94,22 @@ export default function NewPresentationPage() {
 
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStatus, setGenerationStatus] = useState('');
+  const [generationError, setGenerationError] = useState('');
   const [generatedSlides, setGeneratedSlides] = useState<GeneratedSlide[]>([]);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [presentationId, setPresentationId] = useState<string | null>(null);
+  const [outputFiles, setOutputFiles] = useState<string[]>([]);
+  const [pipelineState, setPipelineState] = useState<{
+    current_stage: string;
+    stages: Record<string, { status: string }>;
+    quality_gates: Record<string, boolean>;
+    decisions: Record<string, string>;
+  } | null>(null);
+
+  // Optimistic stage progress
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const startTimeRef = useRef<number>(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     dispatch(fetchPresets());
@@ -69,13 +120,32 @@ export default function NewPresentationPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isChatLoading]);
 
-  // After 4+ user messages, allow generating a brief
+  // After 3+ user messages, allow generating
   useEffect(() => {
     const userMsgCount = chatMessages.filter((m) => m.role === 'user').length;
     if (userMsgCount >= 3) {
       setBriefReady(true);
     }
   }, [chatMessages]);
+
+  // Tick elapsed time while generating
+  useEffect(() => {
+    if (isGenerating) {
+      startTimeRef.current = Date.now();
+      setElapsedSec(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSec(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isGenerating]);
 
   const currentStepIdx = STEPS.findIndex((s) => s.key === step);
 
@@ -132,51 +202,64 @@ export default function NewPresentationPage() {
   };
 
   // ------------------------------------------------------------------
-  // Build brief from conversation
-  // ------------------------------------------------------------------
-
-  const buildBrief = (): string => {
-    let brief = '';
-    for (const msg of chatMessages) {
-      if (msg.role === 'user') {
-        brief += `User: ${msg.content}\n\n`;
-      } else {
-        brief += `Consultant: ${msg.content}\n\n`;
-      }
-    }
-    return brief;
-  };
-
-  // ------------------------------------------------------------------
   // Generate presentation
   // ------------------------------------------------------------------
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    setGenerationStatus('Generating slide content...');
+    setGenerationError('');
     setGeneratedSlides([]);
+    setPipelineState(null);
     setStep('generate');
 
     try {
-      const brief = buildBrief();
       const styleGuide = selectedPreset
         ? `Use style preset: ${selectedPreset}`
         : 'Use a clean, modern professional style with dark text on light backgrounds.';
 
-      setGenerationStatus('Calling AI to write content and design slides...');
-      const result = await agentAPI.generate(brief, styleGuide, slideCount);
+      const result = await agentAPI.generate(
+        chatMessages,
+        slideCount,
+        styleGuide,
+        null,
+        'from_scratch',
+      );
 
+      setPresentationId(result.presentation_id);
       setGeneratedSlides(result.slides);
-      setGenerationStatus(`Done! ${result.slide_count} slides generated.`);
+      setPipelineState(result.pipeline_state);
+      setOutputFiles(result.output_files ?? []);
       setStep('results');
     } catch (err) {
       const errMsg =
         err instanceof Error ? err.message : 'Generation failed';
-      setGenerationStatus(`Error: ${errMsg}`);
+      setGenerationError(errMsg);
     } finally {
       setIsGenerating(false);
     }
   };
+
+  // ------------------------------------------------------------------
+  // Derive stage statuses for display
+  // ------------------------------------------------------------------
+
+  const getStageStatuses = (): Record<string, StageStatus> => {
+    // If we have real pipeline state from the server, use it
+    if (pipelineState) {
+      const result: Record<string, StageStatus> = {};
+      for (const stage of PIPELINE_STAGES) {
+        const serverStatus = pipelineState.stages[stage.key]?.status;
+        if (serverStatus === 'completed') result[stage.key] = 'completed';
+        else if (serverStatus === 'running') result[stage.key] = 'running';
+        else result[stage.key] = 'pending';
+      }
+      return result;
+    }
+    // Otherwise, use optimistic estimate
+    return getOptimisticStageStatuses(elapsedSec);
+  };
+
+  const stageStatuses = getStageStatuses();
 
   // ------------------------------------------------------------------
   // Render
@@ -186,7 +269,7 @@ export default function NewPresentationPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="border-b border-slate-200 bg-white px-6 py-4">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
           <div className="flex items-center gap-2 mb-4">
             <button
               onClick={() => router.push('/presentations')}
@@ -242,7 +325,7 @@ export default function NewPresentationPage() {
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-4xl px-6 py-10">
+      <div className="mx-auto max-w-5xl px-6 py-10">
         {/* ───────────────────────────────────────────── */}
         {/* Step 1: Interview Chat */}
         {/* ───────────────────────────────────────────── */}
@@ -428,33 +511,72 @@ export default function NewPresentationPage() {
                 Generating your presentation
               </h2>
               <p className="text-slate-500 mt-1">
-                The AI pipeline is working. This can take 1-3 minutes depending
-                on slide count.
+                The AI pipeline is working through 10 stages. This takes
+                2&ndash;5 minutes &mdash; please keep this tab open.
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-8">
-              <div className="flex flex-col items-center gap-4">
-                {isGenerating && (
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-                )}
-                <p className="text-sm font-medium text-slate-700">
-                  {generationStatus}
-                </p>
-                {isGenerating && (
-                  <div className="w-full max-w-md bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-primary-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }} />
+            <div className="rounded-xl border border-slate-200 bg-white p-6">
+              {isGenerating && (
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary-600 shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-800">
+                      Running AI pipeline&hellip;
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Elapsed: {Math.floor(elapsedSec / 60)}m {elapsedSec % 60}s
+                    </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              <ol className="space-y-3">
+                {PIPELINE_STAGES.map((stage, idx) => {
+                  const status = stageStatuses[stage.key] ?? 'pending';
+                  return (
+                    <li key={stage.key} className="flex items-center gap-3">
+                      {status === 'completed' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
+                      ) : status === 'running' ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-primary-500 shrink-0" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-slate-300 shrink-0" />
+                      )}
+                      <span
+                        className={`text-sm ${
+                          status === 'completed'
+                            ? 'text-slate-500 line-through'
+                            : status === 'running'
+                              ? 'text-slate-900 font-semibold'
+                              : 'text-slate-400'
+                        }`}
+                      >
+                        {idx + 1}. {stage.label}
+                      </span>
+                      {status === 'running' && (
+                        <span className="ml-auto text-xs text-primary-500 font-medium">
+                          In progress
+                        </span>
+                      )}
+                      {status === 'completed' && (
+                        <span className="ml-auto text-xs text-green-500 font-medium">
+                          Done
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
 
-            {!isGenerating && generationStatus.startsWith('Error') && (
+            {!isGenerating && generationError && (
               <div className="space-y-3">
                 <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-                  <p className="text-sm font-medium text-red-800">
-                    {generationStatus}
+                  <p className="text-sm font-semibold text-red-800 mb-1">
+                    Generation failed
                   </p>
+                  <p className="text-sm text-red-700">{generationError}</p>
                 </div>
                 <div className="flex gap-3">
                   <Button variant="secondary" onClick={handleBack}>
@@ -480,8 +602,12 @@ export default function NewPresentationPage() {
                   Your Presentation
                 </h2>
                 <p className="text-slate-500 mt-1">
-                  {generatedSlides.length} slides generated. Click a slide to
-                  preview it.
+                  {generatedSlides.length} slides generated.
+                  {presentationId && (
+                    <span className="ml-2 text-xs text-slate-400">
+                      ID: {presentationId}
+                    </span>
+                  )}
                 </p>
               </div>
               <Button
@@ -491,6 +617,43 @@ export default function NewPresentationPage() {
                 Back to Dashboard
               </Button>
             </div>
+
+            {/* Quality gates */}
+            {pipelineState?.quality_gates && Object.keys(pipelineState.quality_gates).length > 0 && (
+              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 flex flex-wrap gap-x-6 gap-y-1">
+                <p className="text-xs font-semibold text-green-700 w-full mb-1">Quality gates</p>
+                {Object.entries(pipelineState.quality_gates).map(([gate, passed]) => (
+                  <span key={gate} className="flex items-center gap-1 text-xs text-green-700">
+                    {passed ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                    ) : (
+                      <Circle className="h-3.5 w-3.5 text-slate-400" />
+                    )}
+                    {gate.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Download output files */}
+            {outputFiles.length > 0 && presentationId && (
+              <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+                <p className="text-xs font-semibold text-slate-600 mb-2">Output files</p>
+                <div className="flex flex-wrap gap-2">
+                  {outputFiles.map((filename) => (
+                    <a
+                      key={filename}
+                      href={`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/v1/agents/workspace/${presentationId}/artifact/${filename}`}
+                      download={filename}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {filename}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-12 gap-6">
               {/* Slide list */}
@@ -551,7 +714,7 @@ ${generatedSlides[activeSlideIndex].html}
                     </div>
                     {generatedSlides[activeSlideIndex].speaker_notes && (
                       <div className="p-3 bg-slate-50 border-t border-slate-100">
-                        <p className="text-xs font-medium text-slate-500 mb-1">
+                        <p className="text-xs font-semibold text-slate-500 mb-1">
                           Speaker Notes
                         </p>
                         <p className="text-xs text-slate-600 whitespace-pre-wrap">

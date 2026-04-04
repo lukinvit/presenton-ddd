@@ -143,8 +143,15 @@ export const agentAPI = {
       body: JSON.stringify({ agent, messages, presentation_id: presentationId }),
     }),
 
-  generate: (brief: string, styleGuide: string, slideCount: number) =>
+  generate: (
+    messages: Array<{ role: string; content: string }>,
+    slideCount: number,
+    styleGuide?: string,
+    presentationId?: string | null,
+    mode?: string,
+  ) =>
     fetchAPI<{
+      presentation_id: string;
       slides: Array<{
         index: number;
         title: string;
@@ -152,10 +159,30 @@ export const agentAPI = {
         speaker_notes: string;
       }>;
       slide_count: number;
+      pipeline_state: {
+        current_stage: string;
+        stages: Record<string, { status: string }>;
+        quality_gates: Record<string, boolean>;
+        decisions: Record<string, string>;
+      };
+      output_files: string[];
     }>('/agents/generate', {
       method: 'POST',
-      body: JSON.stringify({ brief, style_guide: styleGuide, slide_count: slideCount }),
+      signal: AbortSignal.timeout(10 * 60 * 1000), // 10 minute timeout
+      body: JSON.stringify({
+        messages,
+        slide_count: slideCount,
+        style_guide: styleGuide,
+        presentation_id: presentationId ?? null,
+        mode: mode ?? 'from_scratch',
+      }),
     }),
+
+  getWorkspace: (presentationId: string) =>
+    fetchAPI<any>(`/agents/workspace/${presentationId}`),
+
+  getArtifact: (presentationId: string, filename: string) =>
+    fetchAPI<any>(`/agents/workspace/${presentationId}/artifact/${filename}`),
 };
 
 // Styles
