@@ -91,6 +91,14 @@ def create_app() -> FastAPI:
         connection_store.disconnect(provider)
         return {"status": "disconnected", "provider": provider}
 
+    @app.get("/api/v1/auth/key/{provider}")
+    async def get_key(provider: str) -> dict:
+        """Return decrypted API key — internal use only (not exposed via gateway)."""
+        key = connection_store.get_key(provider)
+        if key is None:
+            raise HTTPException(status_code=404, detail=f"No key for {provider}")
+        return {"api_key": key, "provider": provider}
+
     # ---
 
     @app.get("/health")

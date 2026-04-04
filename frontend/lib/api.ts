@@ -132,6 +132,30 @@ export const agentAPI = {
       method: 'POST',
       body: JSON.stringify({ approved, feedback }),
     }),
+
+  chat: (
+    agent: string,
+    messages: Array<{ role: string; content: string }>,
+    presentationId?: string,
+  ) =>
+    fetchAPI<{ content: string; model: string; agent: string }>('/agents/chat', {
+      method: 'POST',
+      body: JSON.stringify({ agent, messages, presentation_id: presentationId }),
+    }),
+
+  generate: (brief: string, styleGuide: string, slideCount: number) =>
+    fetchAPI<{
+      slides: Array<{
+        index: number;
+        title: string;
+        html: string;
+        speaker_notes: string;
+      }>;
+      slide_count: number;
+    }>('/agents/generate', {
+      method: 'POST',
+      body: JSON.stringify({ brief, style_guide: styleGuide, slide_count: slideCount }),
+    }),
 };
 
 // Styles

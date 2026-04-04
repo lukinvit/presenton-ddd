@@ -59,7 +59,9 @@ async def proxy(request: Request, path: str) -> Response:
     headers = dict(request.headers)
     headers.pop("host", None)
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    # LLM-powered endpoints (chat, generate) can take 30-120s per call
+    timeout = 180.0 if any(seg in path for seg in ("chat", "generate")) else 30.0
+    async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.request(
             method=request.method,
             url=target_url,

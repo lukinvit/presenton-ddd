@@ -3,7 +3,7 @@ name = "presenton-agent"
 version = "0.1.0"
 description = "Agent bounded context — orchestration, subagents, Ralph Loop"
 requires-python = ">=3.11,<3.13"
-dependencies = ["presenton-shared", "fastapi[standard]>=0.116.0"]
+dependencies = ["presenton-shared", "fastapi[standard]>=0.116.0", "httpx>=0.28.0"]
 
 [build-system]
 requires = ["hatchling"]
